@@ -17,6 +17,14 @@
     "lib": [
       "es2018",
       "dom"
-    ]
+    ],
+    "paths": {
+      "ng-lib": [
+        "dist/ng-lib"
+      ],
+      "ng-lib/*": [
+        "dist/ng-lib/*"
+      ]
+    }
   }
 }
