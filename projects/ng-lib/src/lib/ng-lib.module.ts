@@ -1,10 +1,9 @@
 import { NgModule } from '@angular/core';
-import { NgLibComponent } from './ng-lib.component';
 
 @NgModule({
-  declarations: [NgLibComponent],
+  declarations: [],
   imports: [
   ],
-  exports: [NgLibComponent]
+  exports: []
 })
 export class NgLibModule { }
