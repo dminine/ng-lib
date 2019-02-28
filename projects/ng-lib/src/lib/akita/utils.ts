@@ -42,6 +42,9 @@ export function getNestedFieldValue<E extends BaseEntity>(entity: E, fieldString
 
   let value = entity;
   for (const field of fieldArray) {
+    if (!value) {
+      return null;
+    }
     value = value[field];
   }
 
