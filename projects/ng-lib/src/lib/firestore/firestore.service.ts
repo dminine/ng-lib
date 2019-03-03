@@ -7,14 +7,13 @@ import { switchMap, publish, map, tap, filter, take, skipWhile } from 'rxjs/oper
 import { DnlAkitaBaseService, convertQueryForAkita } from '../akita';
 import { HotObservable, ColdObservable, HashMap } from '../types';
 import {
-  BaseEntity,
   Query,
   Options,
   InfinityListResponse
 } from '../akita/types';
-import { FirestoreQuery } from './firestore.query';
-import { FirestoreState, FirestoreStore } from './firestore.store';
-import { CachedQuery, CachedId } from './types';
+import { DnlFirestoreQuery } from './firestore.query';
+import { DnlFirestoreState, DnlFirestoreStore } from './firestore.store';
+import { CachedQuery, CachedId, DnlFirestoreEntity } from './types';
 import {
   convertQueryForFirestore,
   isNotCached,
@@ -23,9 +22,9 @@ import {
   pushParentsFiltering, convertQueryToString
 } from './utils';
 
-export class FirestoreService<
-  S extends FirestoreState<E>,
-  E extends BaseEntity
+export class DnlFirestoreService<
+  S extends DnlFirestoreState<E>,
+  E extends DnlFirestoreEntity
 > extends DnlAkitaBaseService<S, E> {
   protected readonly cachedQuery: HashMap<CachedQuery>;
   protected readonly cachedId: HashMap<CachedId>;
@@ -34,8 +33,8 @@ export class FirestoreService<
   private readonly getRecentDataSubscription: HashMap<Subscription>;
 
   constructor(
-    protected store: FirestoreStore<S, E>,
-    protected query: FirestoreQuery<S, E>,
+    protected store: DnlFirestoreStore<S, E>,
+    protected query: DnlFirestoreQuery<S, E>,
     protected afs: AngularFirestore,
     protected name: string,
     protected parentNames: string[] = []
@@ -127,7 +126,13 @@ export class FirestoreService<
 
   add(entity: Partial<E>, options: Options = {}): HotObservable<E> {
     const observable = publish<E>()(
-      from(this.afs.collection(this.makePath(options.parents)).add(entity)).pipe(
+      from(
+        this.afs.collection(this.makePath(options.parents)).add({
+          ...entity,
+          createdAt: firestore.Timestamp.now(),
+          modifiedAt: firestore.Timestamp.now()
+        })
+      ).pipe(
         switchMap(doc => this.get(doc.id, options))
       )
     );
@@ -138,12 +143,20 @@ export class FirestoreService<
   }
 
   update(id: string, update: Partial<E>, options: Options = {}): Promise<void> {
-    return this.afs.doc(this.makePathWithId(id, options.parents)).update(update);
+    return this.afs.doc(this.makePathWithId(id, options.parents)).update({
+      ...update,
+      modifiedAt: firestore.Timestamp.now()
+    });
   }
 
   upsert(id: string, entity: Partial<E>, options: Options = {}): HotObservable<E> {
     const observable = publish<E>()(
-      from(this.afs.doc(this.makePathWithId(id, options.parents)).set(entity, { merge: true })).pipe(
+      from(
+        this.afs.doc(this.makePathWithId(id, options.parents)).set(
+          { ...entity, createdAt: firestore.Timestamp.now(), modifiedAt: firestore.Timestamp.now() },
+          { merge: true }
+        )
+      ).pipe(
         switchMap(() => this.get(id, options))
       )
     );

@@ -1,4 +1,3 @@
-
 import { HotObservable, ColdObservable } from '../types';
 
 export interface BaseEntity {

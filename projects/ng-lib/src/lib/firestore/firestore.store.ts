@@ -1,5 +1,5 @@
 import { EntityStore, EntityState } from '@datorama/akita';
-import { BaseEntity } from '../akita/types';
+import { DnlFirestoreEntity } from './types';
 
-export interface FirestoreState<E extends BaseEntity> extends EntityState<E> {}
-export class FirestoreStore<S extends FirestoreState<E>, E extends BaseEntity> extends EntityStore<S, E> {}
+export interface DnlFirestoreState<E extends DnlFirestoreEntity> extends EntityState<E> {}
+export class DnlFirestoreStore<S extends DnlFirestoreState<E>, E extends DnlFirestoreEntity> extends EntityStore<S, E> {}
