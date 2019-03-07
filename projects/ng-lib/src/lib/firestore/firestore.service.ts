@@ -1,8 +1,7 @@
 import { AngularFirestore } from '@angular/fire/firestore';
 import { applyTransaction } from '@datorama/akita';
 import { firestore } from 'firebase/app';
-import { from, Subject, of, forkJoin, combineLatest, BehaviorSubject } from 'rxjs';
-import { Subscription } from 'rxjs/internal/Subscription';
+import { from, Subject, of, forkJoin, combineLatest, BehaviorSubject, Subscription } from 'rxjs';
 import { switchMap, publish, map, tap, filter, take, skipWhile } from 'rxjs/operators';
 import { DnlAkitaBaseService, convertQueryForAkita } from '../akita';
 import { HotObservable, ColdObservable, HashMap } from '../types';

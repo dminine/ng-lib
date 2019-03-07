@@ -8,9 +8,14 @@ export type QueryComparison = '>' | '>=' | '==' | '<=' | '<' | '!=' | 'array-con
 
 export interface Query {
   filters?: QueryFilter[];
-  sorts?: { field: string; direction: 'asc' | 'desc' }[];
+  sorts?: QuerySort[];
   page?: number;
   perPage?: number;
+}
+
+export interface QuerySort {
+  field: string;
+  direction: 'asc' | 'desc';
 }
 
 export interface QueryFilter {
