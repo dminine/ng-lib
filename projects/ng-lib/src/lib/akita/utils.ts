@@ -30,7 +30,7 @@ export function convertStringComparisonToCond(
     return a !== b;
   }
 
-  if (comparison === 'array-contains' || comparison === 'text') {
+  if ((Array.isArray(a) || typeof a === 'string') && (comparison === 'array-contains' || comparison === 'text')) {
     return a.indexOf(b) > -1;
   }
 
