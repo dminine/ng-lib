@@ -77,6 +77,7 @@ export abstract class DnlAkitaBaseService<S, E extends BaseEntity> {
     this.store.setActive(id as any);
   }
 
+  count?(query?: Query, options?: Options): ColdObservable<number>;
   abstract add(entity: Partial<E>, options?: Options): HotObservable<E>;
   abstract update(id: string, update: Partial<E>, options?: Options): Promise<void>;
   abstract upsert(id: string, entity: Partial<E>, options?: Options): HotObservable<E>;
@@ -87,7 +88,7 @@ export abstract class DnlAkitaBaseService<S, E extends BaseEntity> {
 
   protected sliceEntity(query: Query = {}) {
     return (e: E[]) => {
-      if (query.page) {
+      if (query.page || query.perPage) {
         const page = query.page || 1;
         const perPage = query.perPage || this.defaultPerPage;
         return e.slice((page - 1) * perPage, page * perPage);
@@ -134,9 +135,11 @@ export function convertQueryForAkita<E extends BaseEntity>(query: Query) {
       for (const sort of query.sorts) {
         const order = sort.direction === 'asc' ? 1 : -1;
 
-        if (a[sort.field] < b[sort.field]) {
+        const av = getNestedFieldValue(a, sort.field);
+        const bv = getNestedFieldValue(b, sort.field);
+        if (av < bv) {
           return -1 * order;
-        } else if (a[sort.field] > b[sort.field]) {
+        } else if (av > bv) {
           return order;
         }
       }
