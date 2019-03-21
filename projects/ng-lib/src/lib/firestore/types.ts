@@ -1,8 +1,8 @@
 import { firestore } from 'firebase/app';
 import { Subject } from 'rxjs';
-import { BaseEntity } from '../akita';
+import { DnlBaseEntity } from '../akita';
 
-export interface DnlFirestoreEntity extends BaseEntity {
+export interface DnlFirestoreEntity extends DnlBaseEntity {
   createdAt: firestore.Timestamp;
   modifiedAt: firestore.Timestamp;
 }

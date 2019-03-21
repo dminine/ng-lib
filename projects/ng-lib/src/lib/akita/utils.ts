@@ -1,9 +1,9 @@
-import { QueryComparison, Query, Options, BaseEntity } from './types';
+import { DnlFilterComparison, DnlQuery, DnlAkitaOptions, DnlBaseEntity } from './types';
 
 
 export function convertStringComparisonToCond(
   a: any,
-  comparison: QueryComparison,
+  comparison: DnlFilterComparison,
   b: any
 ): boolean {
   if (comparison === '>') {
@@ -37,7 +37,7 @@ export function convertStringComparisonToCond(
   return false;
 }
 
-export function getNestedFieldValue<E extends BaseEntity>(entity: E, fieldString: string) {
+export function getNestedFieldValue<E extends DnlBaseEntity>(entity: E, fieldString: string) {
   const fieldArray = fieldString.split('.');
 
   let value = entity;

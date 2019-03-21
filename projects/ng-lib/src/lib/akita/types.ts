@@ -1,37 +1,37 @@
 import { HotObservable, ColdObservable } from '../types';
 
-export interface BaseEntity {
+export interface DnlBaseEntity {
   id: string;
 }
 
-export type QueryComparison = '>' | '>=' | '==' | '<=' | '<' | '!=' | 'array-contains' | 'text';
+export type DnlFilterComparison = '>' | '>=' | '==' | '<=' | '<' | '!=' | 'array-contains' | 'text';
 
-export interface Query {
-  filters?: QueryFilter[];
-  sorts?: QuerySort[];
+export interface DnlQuery {
+  filters?: DnlFilter[];
+  sorts?: DnlSort[];
   page?: number;
   perPage?: number;
 }
 
-export interface QuerySort {
+export interface DnlSort {
   field: string;
   direction: 'asc' | 'desc';
 }
 
-export interface QueryFilter {
+export interface DnlFilter {
   field: string;
   searchField?: string;
-  comparison: QueryComparison;
+  comparison: DnlFilterComparison;
   logical?: 'and' | 'or';
   value: any;
 }
 
-export interface Options {
+export interface DnlAkitaOptions {
   parents?: string[];
   ignoreCache?: boolean;
 }
 
-export interface InfinityListResponse<E extends BaseEntity> {
+export interface DnlInfinityList<E extends DnlBaseEntity> {
   valueChanges: HotObservable<E[]>;
   more: () => HotObservable<boolean>;
   hasMore$: ColdObservable<boolean>;

@@ -6,9 +6,9 @@ import { switchMap, publish, map, tap, filter, take, skipWhile } from 'rxjs/oper
 import { DnlAkitaBaseService, convertQueryForAkita } from '../akita';
 import { HotObservable, ColdObservable, HashMap } from '../types';
 import {
-  Query,
-  Options,
-  InfinityListResponse
+  DnlQuery,
+  DnlAkitaOptions,
+  DnlInfinityList
 } from '../akita/types';
 import { DnlFirestoreQuery } from './firestore.query';
 import { DnlFirestoreState, DnlFirestoreStore } from './firestore.store';
@@ -60,7 +60,7 @@ export class DnlFirestoreService<
     }
   }
 
-  list(query?: Query, options: Options = {}): ColdObservable<E[]> {
+  list(query?: DnlQuery, options: DnlAkitaOptions = {}): ColdObservable<E[]> {
     if (this.checkQueryIsLoading(query, options)) {
       return this.delayTask(query, options);
     }
@@ -77,7 +77,7 @@ export class DnlFirestoreService<
     );
   }
 
-  infinityList(query: Query = {}, options: Options = {}): InfinityListResponse<E> {
+  infinityList(query: DnlQuery = {}, options: DnlAkitaOptions = {}): DnlInfinityList<E> {
     if (!this.isSubCollection) {
       return super.infinityList(query, options);
     }
@@ -123,7 +123,7 @@ export class DnlFirestoreService<
     };
   }
 
-  add(entity: Partial<E>, options: Options = {}): HotObservable<E> {
+  add(entity: Partial<E>, options: DnlAkitaOptions = {}): HotObservable<E> {
     const observable = publish<E>()(
       from(
         this.afs.collection(this.makePath(options.parents)).add({
@@ -141,14 +141,14 @@ export class DnlFirestoreService<
     return observable;
   }
 
-  update(id: string, update: Partial<E>, options: Options = {}): Promise<void> {
+  update(id: string, update: Partial<E>, options: DnlAkitaOptions = {}): Promise<void> {
     return this.afs.doc(this.makePathWithId(id, options.parents)).update({
       ...update,
       modifiedAt: firestore.Timestamp.now()
     });
   }
 
-  upsert(id: string, entity: Partial<E>, options: Options = {}): HotObservable<E> {
+  upsert(id: string, entity: Partial<E>, options: DnlAkitaOptions = {}): HotObservable<E> {
     const observable = publish<E>()(
       from(
         this.afs.doc(this.makePathWithId(id, options.parents)).set(
@@ -165,11 +165,11 @@ export class DnlFirestoreService<
     return observable;
   }
 
-  delete(id: string, options: Options = {}): Promise<void> {
+  delete(id: string, options: DnlAkitaOptions = {}): Promise<void> {
     return this.afs.doc(this.makePathWithId(id, options.parents)).delete();
   }
 
-  protected getManyFromBackend(ids: string[], options: Options = {}): HotObservable<void> {
+  protected getManyFromBackend(ids: string[], options: DnlAkitaOptions = {}): HotObservable<void> {
     if (isCachedAll(ids, this.cachedId)) {
       return of(undefined);
     }
@@ -221,7 +221,7 @@ export class DnlFirestoreService<
     return subject.asObservable();
   }
 
-  protected listFromBackend(query: Query = {}, options: Options = {}): HotObservable<boolean> {
+  protected listFromBackend(query: DnlQuery = {}, options: DnlAkitaOptions = {}): HotObservable<boolean> {
     if (Boolean(options.ignoreCache)) {
       return this.ignoreCacheListFromBackend(query, options);
     } else {
@@ -295,7 +295,7 @@ export class DnlFirestoreService<
     return Boolean(this.parentNames.length);
   }
 
-  private checkQueryIsLoading(query: Query, options: Options): boolean {
+  private checkQueryIsLoading(query: DnlQuery, options: DnlAkitaOptions): boolean {
     if (Boolean(options.ignoreCache)) {
       return false;
     }
@@ -305,7 +305,7 @@ export class DnlFirestoreService<
     return this.cachedQuery[queryStr] && this.cachedQuery[queryStr].status === 'loading';
   }
 
-  private delayTask(query: Query, options: Options): HotObservable<E[]> {
+  private delayTask(query: DnlQuery, options: DnlAkitaOptions): HotObservable<E[]> {
     const queryStr = convertQueryToString(query, options);
 
     const subject = new Subject<void>();
@@ -313,7 +313,7 @@ export class DnlFirestoreService<
     return subject.asObservable().pipe(switchMap(() => this.list(query, options)));
   }
 
-  private ignoreCacheListFromBackend(query: Query, options: Options): HotObservable<boolean> {
+  private ignoreCacheListFromBackend(query: DnlQuery, options: DnlAkitaOptions): HotObservable<boolean> {
     const subject = new Subject<boolean>();
 
     this.afs
@@ -329,7 +329,7 @@ export class DnlFirestoreService<
     return subject.asObservable();
   }
 
-  private cacheListFromBackend(query: Query, options: Options): HotObservable<boolean> {
+  private cacheListFromBackend(query: DnlQuery, options: DnlAkitaOptions): HotObservable<boolean> {
     const queryStr = convertQueryToString(query, options);
 
     if (isNotCached(this.cachedQuery[queryStr], query)) {

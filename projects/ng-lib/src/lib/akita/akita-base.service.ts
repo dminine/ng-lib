@@ -2,33 +2,33 @@ import { QueryEntity, EntityStore, SelectOptions } from '@datorama/akita';
 import { BehaviorSubject, combineLatest, Observable } from 'rxjs';
 import { map, switchMap, tap, filter, publish } from 'rxjs/operators';
 import { HotObservable, ColdObservable } from '../types';
-import { BaseEntity, Options, Query, InfinityListResponse } from './types';
+import { DnlBaseEntity, DnlAkitaOptions, DnlQuery, DnlInfinityList } from './types';
 import { convertStringComparisonToCond, getNestedFieldValue } from './utils';
 
 
-export abstract class DnlAkitaBaseService<S, E extends BaseEntity> {
+export abstract class DnlAkitaBaseService<S, E extends DnlBaseEntity> {
   protected defaultPerPage = 20;
 
   protected constructor(protected store: EntityStore<S, E>, protected query: QueryEntity<S, E>) {}
 
-  get(id: string, options?: Options): ColdObservable<E> {
+  get(id: string, options?: DnlAkitaOptions): ColdObservable<E> {
     return this.getManyFromBackend([id], options).pipe(
       switchMap(() => this.query.selectEntity(id))
     );
   }
 
-  getMany(ids: string[], options?: Options): ColdObservable<E[]> {
+  getMany(ids: string[], options?: DnlAkitaOptions): ColdObservable<E[]> {
     return this.getManyFromBackend(ids, options).pipe(switchMap(() => this.query.selectMany(ids)));
   }
 
-  list(query?: Query, options?: Options): ColdObservable<E[]> {
+  list(query?: DnlQuery, options?: DnlAkitaOptions): ColdObservable<E[]> {
     return this.listFromBackend(query, options).pipe(
       switchMap(() => this.query.selectAll(convertQueryForAkita(query))),
       map(this.sliceEntity(query).bind(this))
     );
   }
 
-  infinityList(query?: Query, options?: Options): InfinityListResponse<E> {
+  infinityList(query?: DnlQuery, options?: DnlAkitaOptions): DnlInfinityList<E> {
     query = query || {};
     let page = query.page || 1;
     const perPage = query.perPage || this.defaultPerPage;
@@ -77,16 +77,16 @@ export abstract class DnlAkitaBaseService<S, E extends BaseEntity> {
     this.store.setActive(id as any);
   }
 
-  count?(query?: Query, options?: Options): ColdObservable<number>;
-  abstract add(entity: Partial<E>, options?: Options): HotObservable<E>;
-  abstract update(id: string, update: Partial<E>, options?: Options): Promise<void>;
-  abstract upsert(id: string, entity: Partial<E>, options?: Options): HotObservable<E>;
-  abstract delete(id: string, options?: Options): Promise<void>;
+  count?(query?: DnlQuery, options?: DnlAkitaOptions): ColdObservable<number>;
+  abstract add(entity: Partial<E>, options?: DnlAkitaOptions): HotObservable<E>;
+  abstract update(id: string, update: Partial<E>, options?: DnlAkitaOptions): Promise<void>;
+  abstract upsert(id: string, entity: Partial<E>, options?: DnlAkitaOptions): HotObservable<E>;
+  abstract delete(id: string, options?: DnlAkitaOptions): Promise<void>;
 
-  protected abstract getManyFromBackend(ids: string[], options?: Options): HotObservable<void>;
-  protected abstract listFromBackend(query?: Query, options?: Options): HotObservable<boolean>;
+  protected abstract getManyFromBackend(ids: string[], options?: DnlAkitaOptions): HotObservable<void>;
+  protected abstract listFromBackend(query?: DnlQuery, options?: DnlAkitaOptions): HotObservable<boolean>;
 
-  protected sliceEntity(query: Query = {}) {
+  protected sliceEntity(query: DnlQuery = {}) {
     return (e: E[]) => {
       if (query.page || query.perPage) {
         const page = query.page || 1;
@@ -100,7 +100,7 @@ export abstract class DnlAkitaBaseService<S, E extends BaseEntity> {
 }
 
 
-export function convertQueryForAkita<E extends BaseEntity>(query: Query) {
+export function convertQueryForAkita<E extends DnlBaseEntity>(query: DnlQuery) {
   const q: SelectOptions<E> = {};
 
   if (!query) {
