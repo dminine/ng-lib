@@ -1,10 +1,8 @@
-import { Injectable } from '@angular/core';
 import { Query } from '@datorama/akita';
 import { DnlBaseEntity } from '../../akita';
 import { DnlAuthStore, DnlAuthState } from './auth.store';
 import { Observable } from 'rxjs';
 
-@Injectable({ providedIn: 'root' })
 export abstract class DnlAuthQuery<U extends DnlBaseEntity> extends Query<DnlAuthState<U>> {
   isProcessEnded$: Observable<boolean>;
   isEmailVerified$: Observable<boolean>;

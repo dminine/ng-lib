@@ -1,5 +1,4 @@
-import { Injectable } from '@angular/core';
-import { Store, StoreConfig } from '@datorama/akita';
+import { Store } from '@datorama/akita';
 import { DnlBaseEntity } from '../../akita';
 
 export interface DnlAuthState<U extends DnlBaseEntity> {
@@ -24,8 +23,6 @@ export function createInitialState<U extends DnlBaseEntity>(): DnlAuthState<U> {
   };
 }
 
-@Injectable({ providedIn: 'root' })
-@StoreConfig({ name: 'auth' })
 export abstract class DnlAuthStore<U extends DnlBaseEntity> extends Store<DnlAuthState<U>> {
 
   protected constructor(

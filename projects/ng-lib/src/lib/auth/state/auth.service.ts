@@ -1,12 +1,10 @@
-import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { DnlBaseEntity } from '../../akita';
 import { DnlAuthQuery } from './auth.query';
 import { DnlAuthStore } from './auth.store';
 
-@Injectable({ providedIn: 'root' })
-export abstract class AuthService<U extends DnlBaseEntity> {
+export abstract class DnlAuthService<U extends DnlBaseEntity> {
   protected constructor(
     protected authStore: DnlAuthStore<U>,
     protected authQuery: DnlAuthQuery<U>,
