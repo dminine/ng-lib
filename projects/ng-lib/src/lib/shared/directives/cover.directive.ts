@@ -22,7 +22,8 @@ export class DnlCoverDirective implements OnInit {
 
   ngOnInit() {
     const element = this.elementRef.nativeElement;
-    this.renderer.setStyle(element, 'background', 'no-repeat center center');
+    this.renderer.setStyle(element, 'background-repeat', 'no-repeat');
+    this.renderer.setStyle(element, 'background-position', 'center center');
     this.renderer.setStyle(element, 'background-size', 'cover');
   }
 }
