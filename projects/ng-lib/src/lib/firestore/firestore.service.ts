@@ -238,7 +238,7 @@ export class DnlFirestoreService<
       if (parents.length) {
         entity.__parents__ = parents.toString();
       }
-      this.store.createOrReplace(id, entity);
+      this.store.update(id, entity);
     } else {
       this.store.remove(id);
     }
