@@ -1,5 +1,5 @@
 import { Output, EventEmitter, Input } from '@angular/core';
-import { Sort } from '@angular/material';
+import { Sort } from '@angular/material/sort';
 import { BehaviorSubject } from 'rxjs';
 import { DnlBaseEntity, DnlFilter, DnlFilterComparison, DnlSort } from '../akita';
 
