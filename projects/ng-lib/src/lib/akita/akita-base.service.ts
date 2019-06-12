@@ -82,6 +82,8 @@ export abstract class DnlAkitaBaseService<S, E extends DnlBaseEntity> {
   abstract update(id: string, update: Partial<E>, options?: DnlAkitaOptions): Promise<void>;
   abstract upsert(id: string, entity: Partial<E>, options?: DnlAkitaOptions): HotObservable<E>;
   abstract delete(id: string, options?: DnlAkitaOptions): Promise<void>;
+  abstract increase(id: string, field: keyof E, increase: number, options?: DnlAkitaOptions): Promise<void>;
+  abstract decrease(id: string, field: keyof E, decrease: number, options?: DnlAkitaOptions): Promise<void>;
 
   protected abstract getManyFromBackend(ids: string[], options?: DnlAkitaOptions): HotObservable<void>;
   protected abstract listFromBackend(query?: DnlQuery, options?: DnlAkitaOptions): HotObservable<boolean>;

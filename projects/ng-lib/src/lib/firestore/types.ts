@@ -7,6 +7,10 @@ export interface DnlFirestoreEntity extends DnlBaseEntity {
   modifiedAt: firestore.Timestamp;
 }
 
+export interface DnlFirestoreCount {
+  total: number;
+}
+
 export interface CachedQuery {
   total?: number;
   subject?: Subject<boolean>;

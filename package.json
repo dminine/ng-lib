@@ -3,8 +3,10 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "npm run build && ng serve",
     "build": "ng build",
+    "build:app": "ng build ng-lib-app",
+    "prod:app": "ng build ng-lib-app --prod",
     "copy-license": "copy .\\LICENSE .\\dist\\ng-lib",
     "copy-readme": "copy .\\README.md .\\dist\\ng-lib",
     "copy-files": "npm run copy-license && npm run copy-readme",
