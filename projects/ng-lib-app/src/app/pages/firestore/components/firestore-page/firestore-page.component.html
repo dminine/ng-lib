@@ -1,0 +1,14 @@
+<form [formGroup]="companyForm" (ngSubmit)="onSubmit()" novalidate>
+  <input formControlName="name" placeholder="name" type="text">
+
+  <button [disabled]="companyForm.invalid" type="submit">확인</button>
+</form>
+
+<p *ngIf="count$ | async as count">{{ count }}</p>
+
+<ul>
+  <li *ngFor="let company of companies$ | async">
+    <span>{{ company.name }}</span>
+    <button (click)="delete(company.id)" type="button">X</button>
+  </li>
+</ul>
