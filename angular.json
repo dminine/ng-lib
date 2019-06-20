@@ -58,7 +58,7 @@
               "projects/ng-lib-app/src/assets"
             ],
             "styles": [
-              "projects/ng-lib-app/src/styles.css"
+              "projects/ng-lib-app/src/styles.scss"
             ],
             "scripts": [],
             "es5BrowserSupport": true
@@ -115,7 +115,7 @@
             "tsConfig": "projects/ng-lib-app/tsconfig.spec.json",
             "karmaConfig": "projects/ng-lib-app/karma.conf.js",
             "styles": [
-              "projects/ng-lib-app/src/styles.css"
+              "projects/ng-lib-app/src/styles.scss"
             ],
             "scripts": [],
             "assets": [
@@ -167,5 +167,29 @@
       }
     }
   },
-  "defaultProject": "ng-lib"
+  "defaultProject": "ng-lib",
+  "schematics": {
+    "@schematics/angular:class": {
+      "spec": false
+    },
+    "@schematics/angular:component": {
+      "spec": false,
+      "styleext": "scss"
+    },
+    "@schematics/angular:directive": {
+      "spec": false
+    },
+    "@schematics/angular:guard": {
+      "spec": false
+    },
+    "@schematics/angular:module": {
+      "spec": false
+    },
+    "@schematics/angular:pipe": {
+      "spec": false
+    },
+    "@schematics/angular:service": {
+      "spec": false
+    }
+  }
 }
