@@ -11,7 +11,7 @@ import { distinctUntilChanged, tap } from 'rxjs/operators';
 import { SubscriptionBaseComponent, delayMicrotask } from '../core';
 import { HashMap } from '../types';
 
-export function DnlFormGroup(constructor: Type<FormGroupBaseComponent>) {
+export function DnlFormGroup(constructor: Type<any>) {
   if (!(constructor as any).__annotations__) {
     throw new Error('Must be in front of Component decorator.');
   }

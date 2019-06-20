@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { FormControl } from '@angular/forms';
+import { FormControl, FormBuilder } from '@angular/forms';
 import { FormGroupBaseComponent, DnlFormGroup } from '../../../../../../../ng-lib/src/lib/form';
 
 @DnlFormGroup
@@ -10,8 +10,10 @@ import { FormGroupBaseComponent, DnlFormGroup } from '../../../../../../../ng-li
 })
 export class FormGroup1Component extends FormGroupBaseComponent {
 
-  constructor() {
-    super({ formGroup1_1: new FormControl('') });
+  constructor(
+    private fb: FormBuilder
+  ) {
+    super({ formGroup1_1: fb.control(['']) });
   }
 
 }
