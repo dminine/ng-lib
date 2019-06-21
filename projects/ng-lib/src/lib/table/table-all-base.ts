@@ -3,7 +3,6 @@ import { Sort } from '@angular/material/sort';
 import { BehaviorSubject } from 'rxjs';
 import { DnlBaseEntity, DnlFilter, DnlFilterComparison, DnlSort } from '../akita';
 
-
 export abstract class TableAllBaseComponent<E extends DnlBaseEntity> {
   @Input()
   get entities(): E[] { return this._entities; }
