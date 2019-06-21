@@ -128,25 +128,27 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
       return forkJoin(
         this.testFormGroupComponents.map(component => component.formGroupChange.asObservable())
       ).pipe(
-        tap(() => {
-          const subFormGroupMap = this.testFormGroupComponents.reduce(
-            (prev, curr) => {
-              if (curr.flat) {
-                return { ...prev, ...curr.formGroup.controls };
-
-              } else {
-                return { ...prev, [curr.name || curr.constructor.name]: curr.formGroup };
-              }
-            },
-            this.defaultControls
-          );
-
-          this.formGroup = new FormGroup(subFormGroupMap, this.validatorOrOpts, this.asyncValidator);
-        })
+        tap(() => this.makeFormGroup())
       );
 
     } else {
       return of(null);
     }
+  }
+
+  private makeFormGroup() {
+    const subFormGroupMap = this.testFormGroupComponents.reduce(
+      (prev, curr) => {
+        if (curr.flat) {
+          return { ...prev, ...curr.formGroup.controls };
+
+        } else {
+          return { ...prev, [curr.name || curr.constructor.name]: curr.formGroup };
+        }
+      },
+      this.defaultControls
+    );
+
+    this.formGroup = new FormGroup(subFormGroupMap, this.validatorOrOpts, this.asyncValidator);
   }
 }

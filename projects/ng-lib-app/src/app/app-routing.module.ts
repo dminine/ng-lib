@@ -16,6 +16,11 @@ const routes: Routes = [
         path: 'form',
         loadChildren: () =>
           import('./pages/form/form.module').then(m => m.FormPageModule)
+      },
+      {
+        path: 'table',
+        loadChildren: () =>
+          import('./pages/table/table.module').then(m => m.TablePageModule)
       }
     ]
   }

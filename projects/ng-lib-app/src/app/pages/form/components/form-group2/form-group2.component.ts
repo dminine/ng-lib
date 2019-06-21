@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
-import { FormGroupBaseComponent, DnlFormGroup } from '../../../../../../../ng-lib/src/lib/form';
+import { FormGroupBaseComponent, DnlFormGroup } from 'ng-lib';
 
 @DnlFormGroup
 @Component({
