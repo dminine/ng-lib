@@ -6,8 +6,9 @@ import {
   AbstractControlOptions,
   AsyncValidatorFn, NG_VALUE_ACCESSOR, ControlValueAccessor
 } from '@angular/forms';
-import { Subscription, Subject, forkJoin, of } from 'rxjs';
-import { distinctUntilChanged, tap } from 'rxjs/operators';
+import { Subscription, combineLatest, of } from 'rxjs';
+import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
+import { distinctUntilChanged, tap, filter, first } from 'rxjs/operators';
 import { SubscriptionBaseComponent, delayMicrotask } from '../core';
 import { HashMap } from '../types';
 
@@ -45,7 +46,11 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
   @Input()
   set value(value: T) {
     if (value && value !== this._value) {
-      this.resetForm(value);
+      this.isMadeFormGruop$.asObservable().pipe(
+        first(isMade => isMade)
+      ).subscribe(() => {
+        this.resetForm(value);
+      });
     }
   }
   private _value: T;
@@ -57,7 +62,7 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
 
   formGroup: FormGroup;
 
-  private formGroupChange = new Subject<void>();
+  private isMadeFormGruop$ = new BehaviorSubject<boolean>(false);
 
   onChange: any = () => {};
   onTouch: any = () => {};
@@ -111,8 +116,7 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
         this.subscription.add(this.initStatusChange());
         this.formGroup.updateValueAndValidity();
 
-        this.formGroupChange.next();
-        this.formGroupChange.complete();
+        this.isMadeFormGruop$.next(true);
       });
     });
   }
@@ -125,9 +129,10 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
 
   private deferSubFormGroups() {
     if (this.testFormGroupComponents.length) {
-      return forkJoin(
-        this.testFormGroupComponents.map(component => component.formGroupChange.asObservable())
+      return combineLatest(
+        this.testFormGroupComponents.map(component => component.isMadeFormGruop$.asObservable())
       ).pipe(
+        filter(isMadeArray => isMadeArray.every(isMade => isMade)),
         tap(() => this.makeFormGroup())
       );
 

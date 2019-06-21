@@ -1,1 +1,7 @@
-<app-form-group1 name="abc" [formControl]="testControl" (valueChange)="onValueChange($event)" (statusChange)="onStatusChange($event)"></app-form-group1>
+<app-form-group1
+  name="abc"
+  [formControl]="testControl"
+  [value]="{ formGroup1_1: 'test' }"
+  (valueChange)="onValueChange($event)"
+  (statusChange)="onStatusChange($event)"
+></app-form-group1>
