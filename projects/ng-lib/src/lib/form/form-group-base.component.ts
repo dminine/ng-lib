@@ -46,7 +46,7 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
   @Input()
   set value(value: T) {
     if (value && value !== this._value) {
-      this.isMadeFormGruop$.asObservable().pipe(
+      this.isMadeFormGroup$.asObservable().pipe(
         first(isMade => isMade)
       ).subscribe(() => {
         this.resetForm(value);
@@ -62,7 +62,7 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
 
   formGroup: FormGroup;
 
-  private isMadeFormGruop$ = new BehaviorSubject<boolean>(false);
+  private isMadeFormGroup$ = new BehaviorSubject<boolean>(false);
 
   onChange: any = () => {};
   onTouch: any = () => {};
@@ -116,7 +116,7 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
         this.subscription.add(this.initStatusChange());
         this.formGroup.updateValueAndValidity();
 
-        this.isMadeFormGruop$.next(true);
+        this.isMadeFormGroup$.next(true);
       });
     });
   }
@@ -130,7 +130,7 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
   private deferSubFormGroups() {
     if (this.testFormGroupComponents.length) {
       return combineLatest(
-        this.testFormGroupComponents.map(component => component.isMadeFormGruop$.asObservable())
+        this.testFormGroupComponents.map(component => component.isMadeFormGroup$.asObservable())
       ).pipe(
         filter(isMadeArray => isMadeArray.every(isMade => isMade)),
         tap(() => this.makeFormGroup())
