@@ -4,4 +4,4 @@
   <input formControlName="formGroup3_3">
 </form>
 
-<app-form-group2 [flat]="true"></app-form-group2>
+<app-form-group2 *ngIf="visibility" (formGroupChange)="setChildFormGroup($event)"></app-form-group2>

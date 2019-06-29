@@ -9,6 +9,7 @@ import { FormGroupBaseComponent, DnlFormGroup } from 'ng-lib';
   styleUrls: ['./form-group3.component.scss']
 })
 export class FormGroup3Component extends FormGroupBaseComponent {
+  visibility = false;
 
   constructor() {
     super(
@@ -18,6 +19,9 @@ export class FormGroup3Component extends FormGroupBaseComponent {
         formGroup3_3: new FormControl('4'),
       }
     );
+    setTimeout(() => {
+      this.visibility = true;
+    }, 2000);
   }
 
 }

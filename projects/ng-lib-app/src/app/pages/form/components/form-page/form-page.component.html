@@ -1,7 +1,8 @@
 <app-form-group1
+  *ngIf="visibility"
   name="abc"
   [formControl]="testControl"
-  [value]="{ formGroup1_1: 'test' }"
+  [value]="test"
   (valueChange)="onValueChange($event)"
   (statusChange)="onStatusChange($event)"
 ></app-form-group1>

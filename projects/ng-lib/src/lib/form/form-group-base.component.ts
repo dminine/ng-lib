@@ -57,8 +57,9 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
 
   @Output() valueChange = new EventEmitter<T>();
   @Output() statusChange = new EventEmitter<any>();
+  @Output() formGroupChange = new EventEmitter<FormGroupBaseComponent>();
 
-  @ViewChildren(FormGroupBaseComponent) testFormGroupComponents: QueryList<FormGroupBaseComponent>;
+  @ViewChildren(FormGroupBaseComponent) formGroupComponents: QueryList<FormGroupBaseComponent>;
 
   formGroup: FormGroup;
 
@@ -95,6 +96,25 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
   writeValue(obj: any): void {
   }
 
+  setChildFormGroup(childFormGroupComponent: FormGroupBaseComponent) {
+    if (childFormGroupComponent.flat) {
+      for (const i in childFormGroupComponent.formGroup.controls) {
+        if (childFormGroupComponent.formGroup.controls.hasOwnProperty(i)) {
+          this.formGroup.addControl(i, childFormGroupComponent.formGroup.controls[i]);
+        }
+      }
+
+    } else {
+      this.formGroup.addControl(
+        childFormGroupComponent.name || childFormGroupComponent.constructor.name,
+        childFormGroupComponent.formGroup
+      );
+    }
+
+    this.formGroup.updateValueAndValidity();
+    this.formGroupChange.emit(this);
+  }
+
   protected resetForm(value: T): void {
     this.formGroup.reset(value, { emitEvent: false });
   }
@@ -117,6 +137,7 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
         this.formGroup.updateValueAndValidity();
 
         this.isMadeFormGroup$.next(true);
+        this.formGroupChange.emit(this);
       });
     });
   }
@@ -128,9 +149,9 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
   }
 
   private deferSubFormGroups() {
-    if (this.testFormGroupComponents.length) {
+    if (this.formGroupComponents.length) {
       return combineLatest(
-        this.testFormGroupComponents.map(component => component.isMadeFormGroup$.asObservable())
+        this.formGroupComponents.map(component => component.isMadeFormGroup$.asObservable())
       ).pipe(
         filter(isMadeArray => isMadeArray.every(isMade => isMade)),
         tap(() => this.makeFormGroup())
@@ -142,7 +163,7 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
   }
 
   private makeFormGroup() {
-    const subFormGroupMap = this.testFormGroupComponents.reduce(
+    const subFormGroupMap = this.formGroupComponents.reduce(
       (prev, curr) => {
         if (curr.flat) {
           return { ...prev, ...curr.formGroup.controls };
