@@ -7,7 +7,7 @@ import {
   AsyncValidatorFn, NG_VALUE_ACCESSOR, ControlValueAccessor
 } from '@angular/forms';
 import { Subscription, combineLatest, of } from 'rxjs';
-import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
+import { BehaviorSubject } from 'rxjs';
 import { distinctUntilChanged, tap, filter, first } from 'rxjs/operators';
 import { SubscriptionBaseComponent, delayMicrotask } from '../core';
 import { HashMap } from '../types';
