@@ -19,7 +19,13 @@ export class FormPageComponent implements OnInit {
       console.log(value);
     });
     setTimeout(() => {
-      this.test = { formGroup1_1: 'test', formGroup3_1: '3' };
+      this.test = {
+        formGroup1_1: 'test',
+        'form-group3': {
+          formGroup3_1: '3',
+          FormGroup2Component: { formGroup2_1: 'beep' }
+        }
+      };
     }, 1000);
     setTimeout(() => {
       this.visibility = true;

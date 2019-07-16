@@ -44,6 +44,14 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
   @Input() flat = false;
 
   @Input()
+  get doc(): T { return this._doc; }
+  set doc(doc: T) {
+    this._doc = doc;
+    this.value = doc;
+  }
+  private _doc: T;
+
+  @Input()
   set value(value: T) {
     if (value && value !== this._value) {
       this.isMadeFormGroup$.asObservable().pipe(
@@ -98,6 +106,10 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
 
   setChildFormGroup(childFormGroupComponent: FormGroupBaseComponent) {
     if (childFormGroupComponent.flat) {
+      if (this.doc) {
+        childFormGroupComponent.formGroup.patchValue(this.doc, { emitEvent: false });
+      }
+
       for (const i in childFormGroupComponent.formGroup.controls) {
         if (childFormGroupComponent.formGroup.controls.hasOwnProperty(i)) {
           this.formGroup.addControl(i, childFormGroupComponent.formGroup.controls[i]);
@@ -105,6 +117,13 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
       }
 
     } else {
+      if (this.doc) {
+        childFormGroupComponent.formGroup.patchValue(
+          this.doc[childFormGroupComponent.name || childFormGroupComponent.constructor.name] || {},
+          { emitEvent: false }
+        );
+      }
+
       this.formGroup.addControl(
         childFormGroupComponent.name || childFormGroupComponent.constructor.name,
         childFormGroupComponent.formGroup
