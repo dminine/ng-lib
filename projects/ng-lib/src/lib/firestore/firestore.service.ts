@@ -1,4 +1,4 @@
-import { AngularFirestore } from '@angular/fire/firestore';
+import { AngularFirestore, Action, DocumentSnapshot } from '@angular/fire/firestore';
 import { applyTransaction } from '@datorama/akita';
 import { firestore } from 'firebase/app';
 import { from, Subject, of, forkJoin, combineLatest, BehaviorSubject, Subscription } from 'rxjs';
@@ -254,7 +254,7 @@ export class DnlFirestoreService<
 
     const subject = new Subject<void>();
     let count = 0;
-    const snaps: firestore.DocumentSnapshot[] = [];
+    const snaps: Action<DocumentSnapshot<E>>[] = [];
 
     const filteredIds = ids.filter(id => !(id in this.cachedId));
 
@@ -266,7 +266,7 @@ export class DnlFirestoreService<
 
       this.afs
         .doc<E>(this.makePathWithId(id, options.parents))
-        .get()
+        .snapshotChanges()
         .subscribe(snap => {
           count++;
 
@@ -280,9 +280,9 @@ export class DnlFirestoreService<
             applyTransaction(() => {
               snaps.forEach(s => {
                 this.distributeSnapshot(s, options.parents);
-                this.cachedId[s.id].status = 'loaded';
-                this.cachedId[s.id].subject.next();
-                this.cachedId[s.id].subject.complete();
+                this.cachedId[s.payload.id].status = 'loaded';
+                this.cachedId[s.payload.id].subject.next();
+                this.cachedId[s.payload.id].subject.complete();
               });
             });
           }
@@ -307,11 +307,11 @@ export class DnlFirestoreService<
     }
   }
 
-  protected distributeSnapshot(snap: firestore.DocumentSnapshot, parents: string[] = []): void {
-    const id = snap.id;
-    const data = snap.data();
+  protected distributeSnapshot(snap: Action<DocumentSnapshot<E>>, parents: string[] = []): void {
+    const id = snap.payload.id;
+    const data = snap.payload.data();
 
-    if (snap.exists) {
+    if (snap.payload.exists) {
       const entity: any = { ...data, id };
       if (parents.length) {
         entity.__parents__ = parents.toString();

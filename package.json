@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "npm run build && ng serve",
+    "start": "npm run build && ng serve --port 4209",
     "build": "ng build",
     "build:app": "ng build ng-lib-app",
     "prod:app": "ng build ng-lib-app --prod",
