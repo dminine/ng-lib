@@ -266,7 +266,7 @@ export class DnlFirestoreService<
 
       this.afs
         .doc<E>(this.makePathWithId(id, options.parents))
-        .snapshotChanges()
+        .get()
         .subscribe(snap => {
           count++;
 
