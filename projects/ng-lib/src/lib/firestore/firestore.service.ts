@@ -254,7 +254,7 @@ export class DnlFirestoreService<
 
     const subject = new Subject<void>();
     let count = 0;
-    const snaps = [];
+    const snaps: firestore.DocumentSnapshot[] = [];
 
     const filteredIds = ids.filter(id => !(id in this.cachedId));
 
@@ -280,9 +280,9 @@ export class DnlFirestoreService<
             applyTransaction(() => {
               snaps.forEach(s => {
                 this.distributeSnapshot(s, options.parents);
-                this.cachedId[s.payload.id].status = 'loaded';
-                this.cachedId[s.payload.id].subject.next();
-                this.cachedId[s.payload.id].subject.complete();
+                this.cachedId[s.id].status = 'loaded';
+                this.cachedId[s.id].subject.next();
+                this.cachedId[s.id].subject.complete();
               });
             });
           }
