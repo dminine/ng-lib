@@ -307,12 +307,12 @@ export class DnlFirestoreService<
     }
   }
 
-  protected distributeSnapshot(snap, parents: string[] = []): void {
-    const id = snap.payload.id;
-    const data = snap.payload.data();
+  protected distributeSnapshot(snap: firestore.DocumentSnapshot, parents: string[] = []): void {
+    const id = snap.id;
+    const data = snap.data();
 
-    if (snap.payload.exists) {
-      const entity = { ...data, id };
+    if (snap.exists) {
+      const entity: any = { ...data, id };
       if (parents.length) {
         entity.__parents__ = parents.toString();
       }
