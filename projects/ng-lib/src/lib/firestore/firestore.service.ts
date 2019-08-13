@@ -306,7 +306,7 @@ export class DnlFirestoreService<
     const id = snap.payload ? snap.payload.id : snap.id;
     const data = snap.payload ? snap.payload.data() : snap.data();
 
-    if (snap.payload ? snap.payload.exists : snap.exist) {
+    if (snap.payload ? snap.payload.exists : snap.exists) {
       const entity: any = { ...data, id };
       if (parents.length) {
         entity.__parents__ = parents.toString();
