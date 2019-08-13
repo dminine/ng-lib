@@ -1,6 +1,7 @@
 import { QueryEntity, EntityStore, SelectOptions } from '@datorama/akita';
 import { BehaviorSubject, combineLatest, Observable } from 'rxjs';
-import { map, switchMap, tap, filter, publish } from 'rxjs/operators';
+import { map, switchMap, tap, filter } from 'rxjs/operators';
+import { makeHot } from '../core';
 import { HotObservable, ColdObservable } from '../types';
 import { DnlBaseEntity, DnlAkitaOptions, DnlQuery, DnlInfinityList } from './types';
 import { convertStringComparisonToCond, getNestedFieldValue } from './utils';
@@ -9,7 +10,10 @@ import { convertStringComparisonToCond, getNestedFieldValue } from './utils';
 export abstract class DnlAkitaBaseService<S, E extends DnlBaseEntity> {
   protected defaultPerPage = 20;
 
-  protected constructor(protected store: EntityStore<S, E>, protected query: QueryEntity<S, E>) {}
+  protected constructor(
+    protected store: EntityStore<S, E, string>,
+    protected query: QueryEntity<S, E, string>
+  ) {}
 
   get(id: string, options?: DnlAkitaOptions): ColdObservable<E> {
     return this.getManyFromBackend([id], options).pipe(
@@ -38,13 +42,13 @@ export abstract class DnlAkitaBaseService<S, E extends DnlBaseEntity> {
 
     let moreProcessing = false;
     return {
-      valueChanges: combineLatest(
+      valueChanges: combineLatest([
         this.listFromBackend({ ...query, page: 1, perPage: page * perPage }, options).pipe(
           tap(hasMore => hasMore$.next(hasMore)),
           switchMap(() => this.query.selectAll(convertQueryForAkita(query)))
         ),
         perPage$.asObservable()
-      ).pipe(
+      ]).pipe(
         filter(() => !moreProcessing),
         map(([e, pp]: [E[], number]) => e.slice(0, pp))
       ),
@@ -52,17 +56,13 @@ export abstract class DnlAkitaBaseService<S, E extends DnlBaseEntity> {
       more: () => {
         moreProcessing = true;
         page += 1;
-        const observable = publish<boolean>()(
+        return makeHot<boolean>(
           this.listFromBackend({ ...query, page, perPage }, options).pipe(
             tap(hasMore => hasMore$.next(hasMore)),
             tap(() => (moreProcessing = false)),
             tap(() => perPage$.next(page * perPage))
           )
         );
-
-        observable.connect();
-
-        return observable;
       },
 
       hasMore$: hasMore$.asObservable()

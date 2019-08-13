@@ -10,5 +10,7 @@
   <li *ngFor="let company of companies$ | async">
     <span>{{ company.name }}</span>
     <button (click)="delete(company.id)" type="button">X</button>
+
+    <app-team [companyId]="company.id"></app-team>
   </li>
 </ul>

@@ -2,17 +2,13 @@ import { AngularFirestore, Action, DocumentSnapshot } from '@angular/fire/firest
 import { applyTransaction } from '@datorama/akita';
 import { firestore } from 'firebase/app';
 import { from, Subject, of, forkJoin, combineLatest, BehaviorSubject, Subscription } from 'rxjs';
-import { switchMap, publish, map, tap, filter, take, skipWhile } from 'rxjs/operators';
-import { DnlAkitaBaseService, convertQueryForAkita } from '../akita';
+import { switchMap, publish, map, tap, filter, take, skipWhile, first } from 'rxjs/operators';
+import { DnlAkitaBaseService, convertQueryForAkita, DnlQuery, DnlInfinityList } from '../akita';
+import { makeHot } from '../core';
 import { HotObservable, ColdObservable, HashMap } from '../types';
-import {
-  DnlQuery,
-  DnlAkitaOptions,
-  DnlInfinityList
-} from '../akita/types';
 import { DnlFirestoreQuery } from './firestore.query';
 import { DnlFirestoreState, DnlFirestoreStore } from './firestore.store';
-import { CachedQuery, CachedId, DnlFirestoreEntity, DnlFirestoreCount } from './types';
+import { CachedQuery, CachedId, DnlFirestoreEntity, DnlFirestoreCount, DnlFirestoreOptions } from './types';
 import {
   convertQueryForFirestore,
   isNotCached,
@@ -26,7 +22,7 @@ export class DnlFirestoreService<
   E extends DnlFirestoreEntity
 > extends DnlAkitaBaseService<S, E> {
   protected readonly cachedQuery: HashMap<CachedQuery>;
-  protected readonly cachedId: HashMap<CachedId>;
+  protected readonly cachedIdMap: HashMap<CachedId>;
   protected createdAtField: string;
 
   private readonly getRecentDataSubscription: HashMap<Subscription>;
@@ -41,7 +37,7 @@ export class DnlFirestoreService<
     super(store, query);
 
     this.cachedQuery = {};
-    this.cachedId = {};
+    this.cachedIdMap = {};
     this.getRecentDataSubscription = {};
   }
 
@@ -60,7 +56,19 @@ export class DnlFirestoreService<
     }
   }
 
-  list(query?: DnlQuery, options: DnlAkitaOptions = {}): ColdObservable<E[]> {
+  get(id: string, options: DnlFirestoreOptions = {}): ColdObservable<E> {
+    return this.getManyFromBackend([id], options).pipe(
+      switchMap(() => this.query.selectEntity(this.makePathWithId(id, options.parents)))
+    );
+  }
+
+  getMany(ids: string[], options: DnlFirestoreOptions = {}): ColdObservable<E[]> {
+    return this.getManyFromBackend(ids, options).pipe(
+      switchMap(() => this.query.selectMany(ids.map(id => this.makePathWithId(id, options.parents))))
+    );
+  }
+
+  list(query?: DnlQuery, options: DnlFirestoreOptions = {}): ColdObservable<E[]> {
     if (this.checkQueryIsLoading(query, options)) {
       return this.delayTask(query, options);
     }
@@ -77,7 +85,7 @@ export class DnlFirestoreService<
     );
   }
 
-  infinityList(query: DnlQuery = {}, options: DnlAkitaOptions = {}): DnlInfinityList<E> {
+  infinityList(query: DnlQuery = {}, options: DnlFirestoreOptions = {}): DnlInfinityList<E> {
     if (!this.isSubCollection) {
       return super.infinityList(query, options);
     }
@@ -106,24 +114,20 @@ export class DnlFirestoreService<
       more: () => {
         moreProcessing = true;
         page += 1;
-        const observable = publish<boolean>()(
+        return makeHot<boolean>(
           this.listFromBackend({ ...query, page, perPage }, options).pipe(
             tap(hasMore => hasMore$.next(hasMore)),
             tap(() => (moreProcessing = false)),
             tap(() => perPage$.next(page * perPage))
           )
         );
-
-        observable.connect();
-
-        return observable;
       },
 
       hasMore$: hasMore$.asObservable()
     };
   }
 
-  count(query?: DnlQuery, options: DnlAkitaOptions = {}): ColdObservable<number> {
+  count(query?: DnlQuery, options: DnlFirestoreOptions = {}): ColdObservable<number> {
     let path = 'counts/';
 
     if (this.parentNames) {
@@ -137,91 +141,44 @@ export class DnlFirestoreService<
     );
   }
 
-  add(entity: Partial<E>, options: DnlAkitaOptions = {}): HotObservable<E> {
+  add(entity: Partial<E>, options: DnlFirestoreOptions = {}): HotObservable<E> {
     const path = this.makePath(options.parents);
     const id = this.afs.createId();
-    const pathWithId = `${path}/${id}`;
 
-    const observable = publish<E>()(
-      from(
-        runTransaction(async transaction => {
-          await Promise.all([
-            transaction.set(
-              this.afs.doc(pathWithId).ref,
-              {
-                ...entity,
-                createdAt: firestore.Timestamp.now(),
-                modifiedAt: firestore.Timestamp.now()
-              }
-            ),
-            transaction.set(
-              this.afs.doc(`counts/${path}`).ref,
-              {
-                total: firestore.FieldValue.increment(1)
-              },
-              { merge: true }
-            )
-          ]);
-        })
-      ).pipe(
+    return makeHot<E>(
+      from(this.addWithCount(entity, path, `${path}/${id}`)).pipe(
         switchMap(() => this.get(id, options))
       )
     );
-
-    observable.connect();
-
-    return observable;
   }
 
-  update(id: string, update: Partial<E>, options: DnlAkitaOptions = {}): Promise<void> {
+  update(id: string, update: Partial<E>, options: DnlFirestoreOptions = {}): Promise<void> {
     return this.afs.doc(this.makePathWithId(id, options.parents)).update({
       ...update,
       modifiedAt: firestore.Timestamp.now()
     });
   }
 
-  upsert(id: string, entity: Partial<E>, options: DnlAkitaOptions = {}): HotObservable<E> {
+  upsert(id: string, entity: Partial<E>, options: DnlFirestoreOptions = {}): HotObservable<E> {
     const path = this.makePath(options.parents);
     const pathWithId = `${path}/${id}`;
 
-    const observable = publish<E>()(
+    return makeHot<E>(
       this.afs.doc(pathWithId).snapshotChanges().pipe(
         take(1),
         switchMap(snap => {
           if (snap.payload.exists) {
             return this.update(id, entity, options);
           } else {
-            return runTransaction(async transaction => {
-              await Promise.all([
-                transaction.set(
-                  this.afs.doc(pathWithId).ref,
-                  {
-                    ...entity,
-                    createdAt: firestore.Timestamp.now(),
-                    modifiedAt: firestore.Timestamp.now()
-                  }
-                ),
-                transaction.set(
-                  this.afs.doc(`counts/${path}`).ref,
-                  {
-                    total: firestore.FieldValue.increment(1)
-                  },
-                  { merge: true }
-                )
-              ]);
-            });
+            return this.addWithCount(entity, path, pathWithId);
           }
         }),
         switchMap(() => this.get(id, options))
       )
     );
-
-    observable.connect();
-
-    return observable;
   }
 
-  delete(id: string, options: DnlAkitaOptions = {}): Promise<void> {
+  delete(id: string, options: DnlFirestoreOptions = {}): Promise<void> {
     const path = this.makePath(options.parents);
     const pathWithId = `${path}/${id}`;
 
@@ -247,8 +204,10 @@ export class DnlFirestoreService<
     return this.increase(id, field, decrease * -1);
   }
 
-  protected getManyFromBackend(ids: string[], options: DnlAkitaOptions = {}): HotObservable<void> {
-    if (isCachedAll(ids, this.cachedId)) {
+  protected getManyFromBackend(ids: string[], options: DnlFirestoreOptions = {}): HotObservable<void> {
+    const paths = ids.map(id => this.makePathWithId(id, options.parents));
+
+    if (isCachedAll(paths, this.cachedIdMap)) {
       return of(undefined);
     }
 
@@ -256,40 +215,41 @@ export class DnlFirestoreService<
     let count = 0;
     const snaps: Action<DocumentSnapshot<E>>[] = [];
 
-    const filteredIds = ids.filter(id => !(id in this.cachedId));
+    const filteredPaths = paths.filter(path => !(path in this.cachedIdMap));
 
-    for (const id of filteredIds) {
-      this.cachedId[id] = {
+    for (const path of filteredPaths) {
+      this.cachedIdMap[path] = {
         status: 'loading',
         subject: new Subject<void>()
       };
 
       this.afs
-        .doc<E>(this.makePathWithId(id, options.parents))
+        .doc<E>(path)
         .snapshotChanges()
         .subscribe(snap => {
           count++;
 
-          if (count <= filteredIds.length) {
+          if (count <= filteredPaths.length) {
             snaps.push(snap);
           } else {
             this.distributeSnapshot(snap, options.parents);
           }
 
-          if (count === filteredIds.length) {
+          if (count === filteredPaths.length) {
             applyTransaction(() => {
               snaps.forEach(s => {
                 this.distributeSnapshot(s, options.parents);
-                this.cachedId[s.payload.id].status = 'loaded';
-                this.cachedId[s.payload.id].subject.next();
-                this.cachedId[s.payload.id].subject.complete();
+                const key = this.makePathWithId(s.payload.id, options.parents);
+                this.cachedIdMap[key].status = 'loaded';
+                this.cachedIdMap[key].subject.next();
+                this.cachedIdMap[key].subject.complete();
               });
             });
           }
         });
     }
 
-    forkJoin(this.filterLoadingObservable(ids)).subscribe(() => {
+    forkJoin(this.filterLoadingObservable(paths)).subscribe(() => {
       setTimeout(() => {
         subject.next();
         subject.complete();
@@ -299,7 +259,7 @@ export class DnlFirestoreService<
     return subject.asObservable();
   }
 
-  protected listFromBackend(query: DnlQuery = {}, options: DnlAkitaOptions = {}): HotObservable<boolean> {
+  protected listFromBackend(query: DnlQuery = {}, options: DnlFirestoreOptions = {}): HotObservable<boolean> {
     if (Boolean(options.ignoreCache)) {
       return this.ignoreCacheListFromBackend(query, options);
     } else {
@@ -316,9 +276,10 @@ export class DnlFirestoreService<
       if (parents.length) {
         entity.__parents__ = parents.toString();
       }
-      this.store.upsert(id, entity);
+      console.log(entity);
+      this.store.upsert(this.makePathWithId(id, parents), entity);
     } else {
-      this.store.remove(id);
+      this.store.remove(this.makePathWithId(id, parents));
     }
   }
 
@@ -358,8 +319,7 @@ export class DnlFirestoreService<
       this.makePath(parentIds),
       query => query.where(this.createdAtField, '>=', firestore.Timestamp.now())
     ).snapshotChanges().pipe(
-      skipWhile(snaps => !snaps.length),
-      take(1)
+      first(snaps => snaps.length > 0),
     ).subscribe(snaps => {
       this.getManyFromBackend(
         snaps.map(snap => snap.payload.doc.id),
@@ -373,7 +333,7 @@ export class DnlFirestoreService<
     return Boolean(this.parentNames.length);
   }
 
-  private checkQueryIsLoading(query: DnlQuery, options: DnlAkitaOptions): boolean {
+  private checkQueryIsLoading(query: DnlQuery, options: DnlFirestoreOptions): boolean {
     if (Boolean(options.ignoreCache)) {
       return false;
     }
@@ -383,7 +343,7 @@ export class DnlFirestoreService<
     return this.cachedQuery[queryStr] && this.cachedQuery[queryStr].status === 'loading';
   }
 
-  private delayTask(query: DnlQuery, options: DnlAkitaOptions): HotObservable<E[]> {
+  private delayTask(query: DnlQuery, options: DnlFirestoreOptions): HotObservable<E[]> {
     const queryStr = convertQueryToString(query, options);
 
     const subject = new Subject<void>();
@@ -391,7 +351,7 @@ export class DnlFirestoreService<
     return subject.asObservable().pipe(switchMap(() => this.list(query, options)));
   }
 
-  private ignoreCacheListFromBackend(query: DnlQuery, options: DnlAkitaOptions): HotObservable<boolean> {
+  private ignoreCacheListFromBackend(query: DnlQuery, options: DnlFirestoreOptions): HotObservable<boolean> {
     const subject = new Subject<boolean>();
 
     this.afs
@@ -407,7 +367,7 @@ export class DnlFirestoreService<
     return subject.asObservable();
   }
 
-  private cacheListFromBackend(query: DnlQuery, options: DnlAkitaOptions): HotObservable<boolean> {
+  private cacheListFromBackend(query: DnlQuery, options: DnlFirestoreOptions): HotObservable<boolean> {
     const queryStr = convertQueryToString(query, options);
 
     if (isNotCached(this.cachedQuery[queryStr], query)) {
@@ -457,10 +417,32 @@ export class DnlFirestoreService<
     return this.cachedQuery[queryStr].subject.asObservable();
   }
 
-  private filterLoadingObservable(ids: string[]): ColdObservable<void>[] {
-    return ids
-      .filter(id => this.cachedId[id].status === 'loading')
-      .map(id => this.cachedId[id].subject.asObservable());
+  private filterLoadingObservable(paths: string[]): ColdObservable<void>[] {
+    return paths
+      .filter(path => this.cachedIdMap[path].status === 'loading')
+      .map(path => this.cachedIdMap[path].subject.asObservable());
+  }
+
+  private addWithCount(entity: Partial<E>, path: string, pathWithId: string): Promise<void> {
+    return runTransaction(async transaction => {
+      await Promise.all([
+        transaction.set(
+          this.afs.doc(pathWithId).ref,
+          {
+            ...entity,
+            createdAt: firestore.Timestamp.now(),
+            modifiedAt: firestore.Timestamp.now()
+          }
+        ),
+        transaction.set(
+          this.afs.doc(`counts/${path}`).ref,
+          {
+            total: firestore.FieldValue.increment(1)
+          },
+          { merge: true }
+        )
+      ]);
+    });
   }
 }
 

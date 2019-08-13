@@ -1,6 +1,7 @@
 import { fromEvent, Observable } from 'rxjs';
 import { take, map, publish } from 'rxjs/operators';
-import { HotObservable } from '../types';
+import { DnlBaseEntity } from '../akita';
+import { HotObservable, HashMap } from '../types';
 
 
 export function delayTask(callback: () => void) {
@@ -87,4 +88,8 @@ export function makeHot<T = any>(observable: Observable<T>): HotObservable<T> {
 
 export function imageMagnificationReplacer(fileName: string, magnification: number) {
   return fileName.replace(/.([^.]*)$/, `@${magnification}x.$1`);
+}
+
+export function convertArrayToHashMapById<T extends DnlBaseEntity>(array: T[]): HashMap<T> {
+  return array.reduce((prev, curr) => ({ ...prev, [curr.id]: curr }), {});
 }

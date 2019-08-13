@@ -1,0 +1,14 @@
+<form [formGroup]="teamForm" (ngSubmit)="onSubmit()" novalidate>
+  <input formControlName="name" placeholder="name" type="text">
+
+  <button [disabled]="teamForm.invalid" type="submit">확인</button>
+</form>
+
+<p *ngIf="count$ | async as count">{{ count }}</p>
+
+<ul>
+  <li *ngFor="let team of teams$ | async">
+    <span>{{ team.name }}</span>
+    <button (click)="delete(team.id)" type="button">X</button>
+  </li>
+</ul>
