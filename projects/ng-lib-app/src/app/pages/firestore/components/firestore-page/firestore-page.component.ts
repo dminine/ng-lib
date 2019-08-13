@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Validators, FormBuilder } from '@angular/forms';
 import { CompanyService } from '../../../../entities/company/company.service';
+import { TeamService } from '../../../../entities/team/team.service';
 
 @Component({
   selector: 'app-firestore-page',
@@ -13,11 +14,13 @@ export class FirestorePageComponent {
   });
 
   companies$ = this.companyService.list();
+  teams$ = this.teamService.list({}, { group: true });
   count$ = this.companyService.count();
 
   constructor(
     private fb: FormBuilder,
-    private companyService: CompanyService
+    private companyService: CompanyService,
+    private teamService: TeamService
   ) {}
 
   onSubmit() {

@@ -1,7 +1,7 @@
 import { QueryFn } from '@angular/fire/firestore';
 import { firestore } from 'firebase/app';
 import { DnlQuery, DnlAkitaOptions } from '../akita';
-import { CachedQuery } from './types';
+import { CachedQuery, DnlFirestoreOptions } from './types';
 
 export function convertQueryToString(query: DnlQuery = {}, options: DnlAkitaOptions = {}): string {
   const copiedQuery = JSON.parse(JSON.stringify({ ...query, ...options }));
@@ -58,14 +58,18 @@ export function calcLimit(query: DnlQuery = {}, cachedQuery: CachedQuery = {}) {
   return limit;
 }
 
-export function pushParentsFiltering(query: DnlQuery, options: DnlAkitaOptions): DnlQuery {
-  return {
-    ...query,
-    filters: [
-      ...(query.filters || []),
-      { field: '__parents__', comparison: '==', value: options.parents.toString() }
-    ]
-  };
+export function pushParentsFiltering(query: DnlQuery, options: DnlFirestoreOptions): DnlQuery {
+  if (options.group) {
+    return query;
+  } else {
+    return {
+      ...query,
+      filters: [
+        ...(query.filters || []),
+        { field: '__parents__', comparison: '==', value: options.parents.toString() }
+      ]
+    };
+  }
 }
 
 export function isNotCached(cachedQuery: CachedQuery, query: DnlQuery): boolean {

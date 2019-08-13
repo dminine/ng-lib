@@ -4,9 +4,10 @@ import { ReactiveFormsModule } from '@angular/forms';
 
 import { FirestoreRoutingModule } from './firestore-routing.module';
 import { FirestorePageComponent } from './components/firestore-page/firestore-page.component';
+import { TeamComponent } from './components/team/team.component';
 
 @NgModule({
-  declarations: [FirestorePageComponent],
+  declarations: [FirestorePageComponent, TeamComponent],
   imports: [
     CommonModule,
     ReactiveFormsModule,
