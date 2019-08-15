@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormControl } from '@angular/forms';
-import { FormGroupBaseComponent, DnlFormGroup } from 'ng-lib';
+import { FormGroupBaseComponent, DnlFormGroup } from '@dminine/ng-lib';
 
 @DnlFormGroup
 @Component({

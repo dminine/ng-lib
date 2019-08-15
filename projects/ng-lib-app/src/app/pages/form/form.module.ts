@@ -23,6 +23,12 @@ import { FormGroup5Component } from './components/form-group5/form-group5.compon
     CommonModule,
     ReactiveFormsModule,
     FormRoutingModule
+  ],
+  entryComponents: [
+    FormPageComponent,
+    FormGroup1Component,
+    FormGroup2Component,
+    FormGroup3Component
   ]
 })
 export class FormPageModule {}

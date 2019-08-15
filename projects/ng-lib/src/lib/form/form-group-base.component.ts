@@ -11,30 +11,46 @@ import { BehaviorSubject } from 'rxjs';
 import { distinctUntilChanged, tap, filter, first } from 'rxjs/operators';
 import { SubscriptionBaseComponent, delayMicrotask } from '../core';
 import { HashMap } from '../types';
+import 'reflect-metadata';
 
 export function DnlFormGroup(constructor: Type<any>) {
-  if (!(constructor as any).__annotations__) {
-    throw new Error('Must be in front of Component decorator.');
-  }
+  const metadataKeys = Reflect.getMetadataKeys(constructor);
+  console.log(metadataKeys);
 
-  const annotation: Component = (constructor as any).__annotations__[0];
-  const formGroupProvider = {
-    provide: FormGroupBaseComponent,
-    useExisting: forwardRef(() => constructor)
-  };
-  const valueAccessorProvider = {
-    provide: NG_VALUE_ACCESSOR,
-    useExisting: forwardRef(() => constructor),
-    multi: true
-  };
-
-  if (annotation.providers) {
-    annotation.providers.push(formGroupProvider, valueAccessorProvider);
-  } else {
-    annotation.providers = [formGroupProvider, valueAccessorProvider];
-  }
-
+  metadataKeys.forEach((key) => {
+    const onMetadata = Reflect.getOwnMetadata(key, constructor);
+    console.log(onMetadata);
+    console.log(Reflect.getMetadata(key, constructor));
+  });
+  console.log(Reflect.getOwnPropertyDescriptor(constructor, '__annotations__'));
+  console.log(Reflect.getPrototypeOf(constructor));
+  console.log(Reflect.ownKeys(constructor));
+  console.log(constructor);
+  console.log(constructor.prototype);
   return constructor;
+
+  // if (!(constructor as any).__annotations__) {
+  //   throw new Error('Must be in front of Component decorator.');
+  // }
+  //
+  // const annotation: Component = (constructor as any).__annotations__[0];
+  // const formGroupProvider = {
+  //   provide: FormGroupBaseComponent,
+  //   useExisting: forwardRef(() => constructor)
+  // };
+  // const valueAccessorProvider = {
+  //   provide: NG_VALUE_ACCESSOR,
+  //   useExisting: forwardRef(() => constructor),
+  //   multi: true
+  // };
+  //
+  // if (annotation.providers) {
+  //   annotation.providers.push(formGroupProvider, valueAccessorProvider);
+  // } else {
+  //   annotation.providers = [formGroupProvider, valueAccessorProvider];
+  // }
+  //
+  // return constructor;
 }
 
 export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseComponent

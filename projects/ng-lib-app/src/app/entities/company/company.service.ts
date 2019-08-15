@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { CompanyState, CompanyStore } from './company.store';
 import { CompanyQuery } from './company.query';
-import { DnlFirestoreService } from 'ng-lib';
+import { DnlFirestoreService } from '@dminine/ng-lib';
 import { AngularFirestore } from '@angular/fire/firestore';
 import { Company } from './types';
 

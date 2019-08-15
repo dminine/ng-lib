@@ -1,4 +1,4 @@
-import { DnlFirestoreEntity } from 'ng-lib';
+import { DnlFirestoreEntity } from '@dminine/ng-lib';
 
 
 export interface Company extends DnlFirestoreEntity {

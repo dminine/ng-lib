@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { TeamState, TeamStore } from './team.store';
 import { TeamQuery } from './team.query';
-import { DnlFirestoreService } from 'ng-lib';
+import { DnlFirestoreService } from '@dminine/ng-lib';
 import { AngularFirestore } from '@angular/fire/firestore';
 import { Team } from './types';
 

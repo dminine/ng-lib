@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { StoreConfig } from '@datorama/akita';
 import { Team } from './types';
-import { DnlFirestoreState, DnlFirestoreStore } from 'ng-lib';
+import { DnlFirestoreState, DnlFirestoreStore } from '@dminine/ng-lib';
 
 export interface TeamState extends DnlFirestoreState<Team> {}
 

@@ -19,10 +19,10 @@
       "dom"
     ],
     "paths": {
-      "ng-lib": [
+      "@dminine/ng-lib": [
         "dist/ng-lib"
       ],
-      "ng-lib/*": [
+      "@dminine/ng-lib/*": [
         "dist/ng-lib/*"
       ]
     }

@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { TableAllBaseComponent } from 'ng-lib';
+import { TableAllBaseComponent } from '@dminine/ng-lib';
 
 @Component({
   selector: 'app-table-all',

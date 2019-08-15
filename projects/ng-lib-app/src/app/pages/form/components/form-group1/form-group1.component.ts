@@ -1,13 +1,24 @@
-import { Component } from '@angular/core';
-import { FormBuilder } from '@angular/forms';
-import { FormGroupBaseComponent, DnlFormGroup } from 'ng-lib';
+import { Component, forwardRef } from '@angular/core';
+import { FormBuilder, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { FormGroupBaseComponent, DnlFormGroup } from '@dminine/ng-lib';
 
-@DnlFormGroup
 @Component({
   selector: 'app-form-group1',
   templateUrl: './form-group1.component.html',
-  styleUrls: ['./form-group1.component.scss']
+  styleUrls: ['./form-group1.component.scss'],
+  providers: [
+    {
+      provide: FormGroupBaseComponent,
+      useExisting: forwardRef(() => FormGroup1Component)
+    },
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => FormGroup1Component),
+      multi: true
+    }
+  ]
 })
+@DnlFormGroup
 export class FormGroup1Component extends FormGroupBaseComponent {
 
   constructor(
