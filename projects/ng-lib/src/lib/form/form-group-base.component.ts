@@ -49,7 +49,7 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
     this._doc = doc;
     this.value = doc;
   }
-  private _doc: T;
+  protected _doc: T;
 
   @Input()
   set value(value: T) {
@@ -61,7 +61,7 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
       });
     }
   }
-  private _value: T;
+  protected _value: T;
 
   @Output() valueChange = new EventEmitter<T>();
   @Output() statusChange = new EventEmitter<any>();
@@ -71,7 +71,7 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
 
   formGroup: FormGroup;
 
-  private isMadeFormGroup$ = new BehaviorSubject<boolean>(false);
+  protected isMadeFormGroup$ = new BehaviorSubject<boolean>(false);
 
   onChange: any = () => {};
   onTouch: any = () => {};
@@ -148,7 +148,7 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
       });
   }
 
-  private initFormGroup() {
+  protected initFormGroup() {
     return this.deferSubFormGroups().subscribe(() => {
       delayMicrotask(() => {
         this.subscription.add(this.initValueChange());
@@ -161,13 +161,13 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
     });
   }
 
-  private initStatusChange(): Subscription {
+  protected initStatusChange(): Subscription {
     return this.formGroup.statusChanges.subscribe(status => {
       this.statusChange.emit(status);
     });
   }
 
-  private deferSubFormGroups() {
+  protected deferSubFormGroups() {
     if (this.formGroupComponents.length) {
       return combineLatest(
         this.formGroupComponents.map(component => component.isMadeFormGroup$.asObservable())
@@ -181,7 +181,7 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
     }
   }
 
-  private makeFormGroup() {
+  protected makeFormGroup() {
     const subFormGroupMap = this.formGroupComponents.reduce(
       (prev, curr) => {
         if (curr.flat) {

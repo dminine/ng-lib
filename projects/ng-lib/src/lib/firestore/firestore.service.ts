@@ -2,7 +2,7 @@ import { AngularFirestore, Action, DocumentSnapshot } from '@angular/fire/firest
 import { applyTransaction } from '@datorama/akita';
 import { firestore } from 'firebase/app';
 import { from, Subject, of, forkJoin, combineLatest, BehaviorSubject, Subscription } from 'rxjs';
-import { switchMap, publish, map, tap, filter, take, skipWhile, first } from 'rxjs/operators';
+import { switchMap, map, tap, filter, take, first, delayWhen } from 'rxjs/operators';
 import { DnlAkitaBaseService, convertQueryForAkita, DnlQuery, DnlInfinityList } from '../akita';
 import { makeHot } from '../core';
 import { HotObservable, ColdObservable, HashMap } from '../types';
@@ -58,13 +58,15 @@ export class DnlFirestoreService<
 
   get(id: string, options: DnlFirestoreOptions = {}): ColdObservable<E> {
     return this.getManyFromBackend([id], options).pipe(
-      switchMap(() => this.query.selectEntity(this.makePathWithId(id, options.parents)))
+      switchMap(() => this.query.selectEntity(this.makePathWithId(id, options.parents))),
+      map(entity => ({ ...entity, id: this.recoverIdFromPath(entity.id) }))
     );
   }
 
   getMany(ids: string[], options: DnlFirestoreOptions = {}): ColdObservable<E[]> {
     return this.getManyFromBackend(ids, options).pipe(
-      switchMap(() => this.query.selectMany(ids.map(id => this.makePathWithId(id, options.parents))))
+      switchMap(() => this.query.selectMany(ids.map(id => this.makePathWithId(id, options.parents)))),
+      map(entities => entities.map(entity => ({ ...entity, id: this.recoverIdFromPath(entity.id) })))
     );
   }
 
@@ -73,23 +75,16 @@ export class DnlFirestoreService<
       return this.delayTask(query, options);
     }
 
-    if (!this.isSubCollection) {
-      return super.list(query, options);
-    }
-
     return this.listFromBackend(query, options).pipe(
       switchMap(() =>
         this.query.selectAll(convertQueryForAkita(pushParentsFiltering(query, options)))
       ),
-      map(this.sliceEntity(query).bind(this))
+      map(this.sliceEntity(query).bind(this)),
+      map((entities: E[]) => entities.map(entity => ({ ...entity, id: this.recoverIdFromPath(entity.id) })))
     );
   }
 
   infinityList(query: DnlQuery = {}, options: DnlFirestoreOptions = {}): DnlInfinityList<E> {
-    if (!this.isSubCollection) {
-      return super.infinityList(query, options);
-    }
-
     let page = query.page || 1;
     const perPage = query.perPage || this.defaultPerPage;
 
@@ -103,7 +98,8 @@ export class DnlFirestoreService<
           tap(hasMore => hasMore$.next(hasMore)),
           switchMap(() =>
             this.query.selectAll(convertQueryForAkita(pushParentsFiltering(query, options)))
-          )
+          ),
+          map(entities => entities.map(entity => ({ ...entity, id: this.recoverIdFromPath(entity.id) })))
         ),
         perPage$.asObservable()
       ]).pipe(
@@ -270,16 +266,18 @@ export class DnlFirestoreService<
   protected distributeSnapshot(snap: Action<DocumentSnapshot<E>>, parents: string[] = []): void {
     const id = snap.payload.id;
     const data = snap.payload.data();
+    const path = this.makePathWithId(id, parents);
 
     if (snap.payload.exists) {
-      const entity: any = { ...data, id };
+      const entity: any = { ...data, id: path };
+
       if (parents.length) {
         entity.__parents__ = parents.toString();
       }
-      console.log(entity);
-      this.store.upsert(this.makePathWithId(id, parents), entity);
+
+      this.store.upsert(path, entity);
     } else {
-      this.store.remove(this.makePathWithId(id, parents));
+      this.store.remove(path);
     }
   }
 
@@ -357,11 +355,12 @@ export class DnlFirestoreService<
     this.afs
       .collection<E>(this.makePath(options.parents), query && convertQueryForFirestore(query))
       .get()
+      .pipe(
+        delayWhen(snap => this.getManyFromBackend(snap.docs.map(s => s.id), options))
+      )
       .subscribe(snap => {
-        this.getManyFromBackend(snap.docs.map(s => s.id), options).subscribe(() => {
-          subject.next(calcLimit(query) === snap.docs.length);
-          subject.complete();
-        });
+        subject.next(calcLimit(query) === snap.docs.length);
+        subject.complete();
       });
 
     return subject.asObservable();
@@ -376,40 +375,38 @@ export class DnlFirestoreService<
           delayedTasks: []
         };
       }
+
       this.cachedQuery[queryStr].subject = new Subject<boolean>();
       this.cachedQuery[queryStr].status = 'loading';
 
-      this.afs
-        .collection<E>(
-          this.makePath(options.parents),
-          query && convertQueryForFirestore(query, this.cachedQuery[queryStr])
-        )
-        .get()
-        .subscribe(snap => {
-          this.getManyFromBackend(snap.docs.map(s => s.id), options).subscribe(() => {
-            const total = this.cachedQuery[queryStr].total
-              ? this.cachedQuery[queryStr].total + snap.docs.length
-              : snap.docs.length;
-            const hasMore = calcLimit(query, this.cachedQuery[queryStr]) === snap.docs.length;
+      this.afs.collection<E>(
+        this.makePath(options.parents),
+        query && convertQueryForFirestore(query, this.cachedQuery[queryStr])
+      ).get().pipe(
+        delayWhen(snap => this.getManyFromBackend(snap.docs.map(s => s.id), options))
+      ).subscribe(snap => {
+        const total = this.cachedQuery[queryStr].total
+          ? this.cachedQuery[queryStr].total + snap.docs.length
+          : snap.docs.length;
+        const hasMore = calcLimit(query, this.cachedQuery[queryStr]) === snap.docs.length;
 
-            this.cachedQuery[queryStr] = {
-              ...this.cachedQuery[queryStr],
-              total,
-              status: 'loaded',
-              lastDoc: snap.docs[snap.docs.length - 1],
-              hasMore
-            };
+        this.cachedQuery[queryStr] = {
+          ...this.cachedQuery[queryStr],
+          total,
+          status: 'loaded',
+          lastDoc: snap.docs[snap.docs.length - 1],
+          hasMore
+        };
 
-            this.cachedQuery[queryStr].subject.next(hasMore);
-            this.cachedQuery[queryStr].subject.complete();
+        this.cachedQuery[queryStr].subject.next(hasMore);
+        this.cachedQuery[queryStr].subject.complete();
 
-            if (this.cachedQuery[queryStr].delayedTasks.length) {
-              const delayedTask = this.cachedQuery[queryStr].delayedTasks.shift();
-              delayedTask.next();
-              delayedTask.complete();
-            }
-          });
-        });
+        if (this.cachedQuery[queryStr].delayedTasks.length) {
+          const delayedTask = this.cachedQuery[queryStr].delayedTasks.shift();
+          delayedTask.next();
+          delayedTask.complete();
+        }
+      });
     } else if (this.cachedQuery[queryStr].status === 'loaded') {
       return of(this.cachedQuery[queryStr].hasMore);
     }
@@ -443,6 +440,10 @@ export class DnlFirestoreService<
         )
       ]);
     });
+  }
+
+  recoverIdFromPath(path: string): string {
+    return path.split('/').pop();
   }
 }
 

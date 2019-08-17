@@ -59,6 +59,10 @@ export function calcLimit(query: DnlQuery = {}, cachedQuery: CachedQuery = {}) {
 }
 
 export function pushParentsFiltering(query: DnlQuery, options: DnlAkitaOptions): DnlQuery {
+  if (!options.parents) {
+    return query;
+  }
+
   return {
     ...query,
     filters: [
