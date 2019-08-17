@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { TeamService } from '../../../../entities/team/team.service';
 import { Team } from '../../../../entities/team/types';
 
@@ -14,7 +15,11 @@ export class TeamComponent {
   get companyId(): string { return this._companyId; }
   set companyId(companyId: string) {
     this._companyId = companyId;
-    this.teams$ = this.teamService.list({}, { parents: [companyId] });
+    this.teams$ = this.teamService.list({}, { parents: [companyId] }).pipe(
+      tap(teams => {
+        console.log(teams);
+      })
+    );
   }
   private _companyId: string;
 

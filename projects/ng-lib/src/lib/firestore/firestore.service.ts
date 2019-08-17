@@ -1,8 +1,8 @@
-import { AngularFirestore, Action, DocumentSnapshot } from '@angular/fire/firestore';
+import { AngularFirestore, Action, DocumentSnapshot, QueryDocumentSnapshot } from '@angular/fire/firestore';
 import { applyTransaction } from '@datorama/akita';
 import { firestore } from 'firebase/app';
 import { from, Subject, of, forkJoin, combineLatest, BehaviorSubject, Subscription } from 'rxjs';
-import { switchMap, map, tap, filter, take, first } from 'rxjs/operators';
+import { switchMap, map, tap, filter, take, first, delayWhen } from 'rxjs/operators';
 import { DnlAkitaBaseService, convertQueryForAkita, DnlQuery, DnlInfinityList } from '../akita';
 import { makeHot } from '../core';
 import { HotObservable, ColdObservable, HashMap } from '../types';
@@ -57,16 +57,20 @@ export class DnlFirestoreService<
   }
 
   get(id: string, options: DnlFirestoreOptions = {}): ColdObservable<E> {
-    return this.getManyFromBackend([id], options).pipe(
-      switchMap(() => this.query.selectEntity(this.makePathWithId(id, options.parents))),
-      map(entity => ({ ...entity, id: this.recoverIdFromPath(entity.id) }))
+    const path = this.makePathWithId(id, options.parents);
+
+    return this.getManyFromBackend([path], options).pipe(
+      switchMap(() => this.query.selectEntity(path)),
+      map(entity => ({ ...entity, id }))
     );
   }
 
   getMany(ids: string[], options: DnlFirestoreOptions = {}): ColdObservable<E[]> {
-    return this.getManyFromBackend(ids, options).pipe(
-      switchMap(() => this.query.selectMany(ids.map(id => this.makePathWithId(id, options.parents)))),
-      map(entities => entities.map(entity => ({ ...entity, id: this.recoverIdFromPath(entity.id) })))
+    const paths = ids.map(id => this.makePathWithId(id, options.parents));
+
+    return this.getManyFromBackend(paths, options).pipe(
+      switchMap(() => this.query.selectMany(paths)),
+      map(this.recoverIdFromEntities.bind(this))
     );
   }
 
@@ -80,7 +84,7 @@ export class DnlFirestoreService<
         this.query.selectAll(convertQueryForAkita(pushParentsFiltering(query, options)))
       ),
       map(this.sliceEntity(query).bind(this)),
-      map((entities: E[]) => entities.map(entity => ({ ...entity, id: this.recoverIdFromPath(entity.id) })))
+      map(this.recoverIdFromEntities.bind(this))
     );
   }
 
@@ -92,6 +96,7 @@ export class DnlFirestoreService<
     const hasMore$ = new BehaviorSubject(false);
 
     let moreProcessing = false;
+
     return {
       valueChanges: combineLatest([
         this.listFromBackend({ ...query, page: 1, perPage: page * perPage }, options).pipe(
@@ -99,7 +104,7 @@ export class DnlFirestoreService<
           switchMap(() =>
             this.query.selectAll(convertQueryForAkita(pushParentsFiltering(query, options)))
           ),
-          map(entities => entities.map(entity => ({ ...entity, id: this.recoverIdFromPath(entity.id) })))
+          map(this.recoverIdFromEntities.bind(this))
         ),
         perPage$.asObservable()
       ]).pipe(
@@ -162,13 +167,11 @@ export class DnlFirestoreService<
     return makeHot<E>(
       this.afs.doc(pathWithId).snapshotChanges().pipe(
         take(1),
-        switchMap(snap => {
-          if (snap.payload.exists) {
-            return this.update(id, entity, options);
-          } else {
-            return this.addWithCount(entity, path, pathWithId);
-          }
-        }),
+        switchMap(snap =>
+          snap.payload.exists ?
+            this.update(id, entity, options) :
+            this.addWithCount(entity, path, pathWithId)
+        ),
         switchMap(() => this.get(id, options))
       )
     );
@@ -200,9 +203,7 @@ export class DnlFirestoreService<
     return this.increase(id, field, decrease * -1);
   }
 
-  protected getManyFromBackend(ids: string[], options: DnlFirestoreOptions = {}): HotObservable<void> {
-    const paths = ids.map(id => this.makePathWithId(id, options.parents));
-
+  protected getManyFromBackend(paths: string[], options: DnlFirestoreOptions = {}): HotObservable<void> {
     if (isCachedAll(paths, this.cachedIdMap)) {
       return of(undefined);
     }
@@ -219,30 +220,25 @@ export class DnlFirestoreService<
         subject: new Subject<void>()
       };
 
-      this.afs
-        .doc<E>(path)
-        .snapshotChanges()
-        .subscribe(snap => {
-          count++;
+      this.afs.doc<E>(path).snapshotChanges().subscribe(snap => {
+        count++;
 
-          if (count <= filteredPaths.length) {
-            snaps.push(snap);
-          } else {
-            this.distributeSnapshot(snap, options.parents);
-          }
+        count <= filteredPaths.length ?
+          snaps.push(snap) :
+          this.distributeSnapshot(snap.payload);
 
-          if (count === filteredPaths.length) {
-            applyTransaction(() => {
-              snaps.forEach(s => {
-                this.distributeSnapshot(s, options.parents);
-                const key = this.makePathWithId(s.payload.id, options.parents);
-                this.cachedIdMap[key].status = 'loaded';
-                this.cachedIdMap[key].subject.next();
-                this.cachedIdMap[key].subject.complete();
-              });
+        if (count === filteredPaths.length) {
+          applyTransaction(() => {
+            snaps.forEach(s => {
+              this.distributeSnapshot(s.payload);
+              const key = s.payload.ref.path;
+              this.cachedIdMap[key].status = 'loaded';
+              this.cachedIdMap[key].subject.next();
+              this.cachedIdMap[key].subject.complete();
             });
-          }
-        });
+          });
+        }
+      });
     }
 
     forkJoin(this.filterLoadingObservable(paths)).subscribe(() => {
@@ -263,18 +259,27 @@ export class DnlFirestoreService<
     }
   }
 
-  protected distributeSnapshot(snap: any, parents: string[] = []): void {
-    const id = snap.payload ? snap.payload.id : snap.id;
-    const data = snap.payload ? snap.payload.data() : snap.data();
-    const path = this.makePathWithId(id, parents);
+  protected distributeSnapshot(snap: QueryDocumentSnapshot<E>): void {
+    const data = snap.data();
+    const path = snap.ref.path;
 
-    if (snap.payload ? snap.payload.exists : snap.exists) {
+    if (snap.exists) {
       const entity: any = { ...data, id: path };
-      if (parents.length) {
+
+      const splitPath = path.split('/');
+
+      if (splitPath.length > 2) {
+        const parents = [];
+
+        for (let i = 1; i < splitPath.length - 1; i += 2) {
+          parents.push(splitPath[i]);
+        }
+
         entity.__parents__ = parents.toString();
       }
 
       this.store.upsert(path, entity);
+
     } else {
       this.store.remove(path);
     }
@@ -312,31 +317,18 @@ export class DnlFirestoreService<
       throw new Error('createdAtField 변수를 먼저 설정해야 합니다');
     }
 
-    const collectionRef = options.group
-      ? this.afs.collectionGroup(
-        this.name,
-        query => query.where(this.createdAtField, '>=', firestore.Timestamp.now())
-      )
-      : this.afs.collection(
-        this.makePath(options.parents),
-        query => query.where(this.createdAtField, '>=', firestore.Timestamp.now())
-      );
+    const queryFn = query => query.where(this.createdAtField, '>=', firestore.Timestamp.now());
+
+    const collectionRef = options.group ?
+      this.afs.collectionGroup(this.name, queryFn) :
+      this.afs.collection(this.makePath(options.parents), queryFn);
 
     this.getRecentDataSubscription[options.parents.toString()] = collectionRef.snapshotChanges().pipe(
-      first((snaps: any) => snaps.length > 0),
+      first(snaps => snaps.length > 0),
     ).subscribe(snaps => {
-      if (!options.group) {
-        this.getManyFromBackend(
-          snaps.map(snap => snap.payload.doc.id),
-          options
-        );
-        this.getRecentData(options);
-      }
+      this.getManyFromBackend(snaps.map(snap => snap.payload.doc.ref.path), options);
+      this.getRecentData(options);
     });
-  }
-
-  private get isSubCollection(): boolean {
-    return Boolean(this.parentNames.length);
   }
 
   private checkQueryIsLoading(query: DnlQuery, options: DnlFirestoreOptions): boolean {
@@ -360,27 +352,18 @@ export class DnlFirestoreService<
   private ignoreCacheListFromBackend(query: DnlQuery, options: DnlFirestoreOptions): HotObservable<boolean> {
     const subject = new Subject<boolean>();
 
-    const collectionRef = options.group
-      ? this.afs.collectionGroup(
-        this.name, query && convertQueryForFirestore(query)
-      )
-      : this.afs.collection(
-        this.makePath(options.parents), query && convertQueryForFirestore(query)
-      );
+    const queryFn = query && convertQueryForFirestore(query);
 
-    collectionRef.get().subscribe(snap => {
-      if (options.group) {
-        snap.forEach(s => {
-          this.distributeSnapshot(s as any, options.parents);
-        });
-        subject.next(calcLimit(query) === snap.docs.length);
-        subject.complete();
-      } else {
-        this.getManyFromBackend(snap.docs.map(s => s.id), options).subscribe(() => {
-          subject.next(calcLimit(query) === snap.docs.length);
-          subject.complete();
-        });
-      }
+    const collectionRef = options.group ?
+      this.afs.collectionGroup(this.name, queryFn) :
+      this.afs.collection(this.makePath(options.parents), queryFn);
+
+    collectionRef.get().pipe(
+      delayWhen(snaps =>
+        this.getManyFromBackend(snaps.docs.map(snap => snap.ref.path), options))
+    ).subscribe(snaps => {
+      subject.next(calcLimit(query) === snaps.docs.length);
+      subject.complete();
     });
 
     return subject.asObservable();
@@ -399,49 +382,39 @@ export class DnlFirestoreService<
       this.cachedQuery[queryStr].subject = new Subject<boolean>();
       this.cachedQuery[queryStr].status = 'loading';
 
-      const collectionRef = options.group
-        ? this.afs.collectionGroup(
-          this.name,
-          query && convertQueryForFirestore(query, this.cachedQuery[queryStr])
-        )
-        : this.afs.collection(
-          this.makePath(options.parents),
-          query && convertQueryForFirestore(query, this.cachedQuery[queryStr])
-        );
+      const queryFn = query && convertQueryForFirestore(query, this.cachedQuery[queryStr]);
 
-      collectionRef.get().subscribe(snap => {
-        if (options.group) {
-          snap.forEach(s => {
-            this.distributeSnapshot(s as any, options.parents);
-          });
-          const hasMore = calcLimit(query, this.cachedQuery[queryStr]) === snap.docs.length;
-          this.cachedQuery[queryStr].subject.next(hasMore);
-          this.cachedQuery[queryStr].subject.complete();
+      const collectionRef = options.group ?
+        this.afs.collectionGroup(this.name, queryFn) :
+        this.afs.collection(this.makePath(options.parents), queryFn);
 
-        } else {
-          this.getManyFromBackend(snap.docs.map(s => s.id), options).subscribe(() => {
-            const total = this.cachedQuery[queryStr].total
-              ? this.cachedQuery[queryStr].total + snap.docs.length
-              : snap.docs.length;
-            const hasMore = calcLimit(query, this.cachedQuery[queryStr]) === snap.docs.length;
+      collectionRef.get().pipe(
+        delayWhen(snaps =>
+          this.getManyFromBackend(snaps.docs.map(snap => snap.ref.path), options))
+      ).subscribe(snaps => {
+        const snapsLength = snaps.docs.length;
 
-            this.cachedQuery[queryStr] = {
-              ...this.cachedQuery[queryStr],
-              total,
-              status: 'loaded',
-              lastDoc: snap.docs[snap.docs.length - 1],
-              hasMore
-            };
+        const total = this.cachedQuery[queryStr].total ?
+          this.cachedQuery[queryStr].total + snapsLength :
+          snapsLength;
 
-            this.cachedQuery[queryStr].subject.next(hasMore);
-            this.cachedQuery[queryStr].subject.complete();
+        const hasMore = calcLimit(query, this.cachedQuery[queryStr]) === snapsLength;
 
-            if (this.cachedQuery[queryStr].delayedTasks.length) {
-              const delayedTask = this.cachedQuery[queryStr].delayedTasks.shift();
-              delayedTask.next();
-              delayedTask.complete();
-            }
-          });
+        this.cachedQuery[queryStr] = {
+          ...this.cachedQuery[queryStr],
+          total,
+          status: 'loaded',
+          lastDoc: snaps.docs[snapsLength - 1],
+          hasMore
+        };
+
+        this.cachedQuery[queryStr].subject.next(hasMore);
+        this.cachedQuery[queryStr].subject.complete();
+
+        if (this.cachedQuery[queryStr].delayedTasks.length) {
+          const delayedTask = this.cachedQuery[queryStr].delayedTasks.shift();
+          delayedTask.next();
+          delayedTask.complete();
         }
       });
 
@@ -480,8 +453,12 @@ export class DnlFirestoreService<
     });
   }
 
-  recoverIdFromPath(path: string): string {
+  private recoverIdFromPath(path: string): string {
     return path.split('/').pop();
+  }
+
+  private recoverIdFromEntities(entities: E[]): E[] {
+    return entities.map(entity => ({ ...entity, id: this.recoverIdFromPath(entity.id) }));
   }
 }
 
