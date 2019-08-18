@@ -25,7 +25,7 @@ export class DnlFirestoreService<
   protected readonly cachedIdMap: HashMap<CachedId>;
   protected createdAtField: string;
 
-  private readonly getRecentDataSubscription: HashMap<Subscription>;
+  protected readonly getRecentDataSubscription: HashMap<Subscription>;
 
   constructor(
     protected store: DnlFirestoreStore<S, E>,
@@ -312,7 +312,7 @@ export class DnlFirestoreService<
     return `${this.makePath(parentIds)}/${id}`;
   }
 
-  private getRecentData(options: DnlFirestoreOptions = {}): void {
+  protected getRecentData(options: DnlFirestoreOptions = {}): void {
     if (!this.createdAtField) {
       throw new Error('createdAtField 변수를 먼저 설정해야 합니다');
     }
@@ -331,7 +331,7 @@ export class DnlFirestoreService<
     });
   }
 
-  private checkQueryIsLoading(query: DnlQuery, options: DnlFirestoreOptions): boolean {
+  protected checkQueryIsLoading(query: DnlQuery, options: DnlFirestoreOptions): boolean {
     if (Boolean(options.ignoreCache)) {
       return false;
     }
@@ -341,7 +341,7 @@ export class DnlFirestoreService<
     return this.cachedQuery[queryStr] && this.cachedQuery[queryStr].status === 'loading';
   }
 
-  private delayTask(query: DnlQuery, options: DnlFirestoreOptions): HotObservable<E[]> {
+  protected delayTask(query: DnlQuery, options: DnlFirestoreOptions): HotObservable<E[]> {
     const queryStr = convertQueryToString(query, options);
 
     const subject = new Subject<void>();
@@ -349,7 +349,7 @@ export class DnlFirestoreService<
     return subject.asObservable().pipe(switchMap(() => this.list(query, options)));
   }
 
-  private ignoreCacheListFromBackend(query: DnlQuery, options: DnlFirestoreOptions): HotObservable<boolean> {
+  protected ignoreCacheListFromBackend(query: DnlQuery, options: DnlFirestoreOptions): HotObservable<boolean> {
     const subject = new Subject<boolean>();
 
     const queryFn = query && convertQueryForFirestore(query);
@@ -369,7 +369,7 @@ export class DnlFirestoreService<
     return subject.asObservable();
   }
 
-  private cacheListFromBackend(query: DnlQuery, options: DnlFirestoreOptions): HotObservable<boolean> {
+  protected cacheListFromBackend(query: DnlQuery, options: DnlFirestoreOptions): HotObservable<boolean> {
     const queryStr = convertQueryToString(query, options);
 
     if (isNotCached(this.cachedQuery[queryStr], query)) {
@@ -425,13 +425,13 @@ export class DnlFirestoreService<
     return this.cachedQuery[queryStr].subject.asObservable();
   }
 
-  private filterLoadingObservable(paths: string[]): ColdObservable<void>[] {
+  protected filterLoadingObservable(paths: string[]): ColdObservable<void>[] {
     return paths
       .filter(path => this.cachedIdMap[path].status === 'loading')
       .map(path => this.cachedIdMap[path].subject.asObservable());
   }
 
-  private addWithCount(entity: Partial<E>, path: string, pathWithId: string): Promise<void> {
+  protected addWithCount(entity: Partial<E>, path: string, pathWithId: string): Promise<void> {
     return runTransaction(async transaction => {
       await Promise.all([
         transaction.set(
@@ -453,11 +453,11 @@ export class DnlFirestoreService<
     });
   }
 
-  private recoverIdFromPath(path: string): string {
+  protected recoverIdFromPath(path: string): string {
     return path.split('/').pop();
   }
 
-  private recoverIdFromEntities(entities: E[]): E[] {
+  protected recoverIdFromEntities(entities: E[]): E[] {
     return entities.map(entity => ({ ...entity, id: this.recoverIdFromPath(entity.id) }));
   }
 }
