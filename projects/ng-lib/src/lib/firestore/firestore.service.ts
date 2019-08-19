@@ -61,7 +61,7 @@ export class DnlFirestoreService<
 
     return this.getManyFromBackend([path], options).pipe(
       switchMap(() => this.query.selectEntity(path)),
-      map(entity => ({ ...entity, id }))
+      map(entity => entity && ({ ...entity, id }))
     );
   }
 
