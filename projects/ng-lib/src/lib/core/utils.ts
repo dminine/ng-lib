@@ -67,7 +67,23 @@ export function deepEqual<A, B>(obj1: A, obj2: B): boolean {
   return JSON.stringify(obj1) === JSON.stringify(obj2);
 }
 
+export function readAsBinaryString(file: File): Observable<string> {
+  const { reader, observable } = readAs(file);
+
+  reader.readAsBinaryString(file);
+
+  return observable;
+}
+
 export function readAsDataURL(file: File): Observable<string> {
+  const { reader, observable } = readAs(file);
+
+  reader.readAsDataURL(file);
+
+  return observable;
+}
+
+function readAs(file: File): { reader: FileReader, observable: Observable<string> } {
   const reader = new FileReader();
 
   const observable = fromEvent(reader, 'load').pipe(
@@ -75,9 +91,7 @@ export function readAsDataURL(file: File): Observable<string> {
     map((event: any) => event.target.result)
   );
 
-  reader.readAsDataURL(file);
-
-  return observable;
+  return { reader, observable };
 }
 
 export function makeHot<T = any>(observable: Observable<T>): HotObservable<T> {
