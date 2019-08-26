@@ -107,3 +107,13 @@ export function imageMagnificationReplacer(fileName: string, magnification: numb
 export function convertArrayToHashMapById<T extends DnlBaseEntity>(array: T[]): HashMap<T> {
   return array.reduce((prev, curr) => ({ ...prev, [curr.id]: curr }), {});
 }
+
+export function sumProperty<T>(array: T[], property: keyof T): number {
+  return array.map(value => value[property]).reduce((prev, curr) => {
+    if (typeof curr === 'number') {
+      return prev + curr;
+    }
+
+    return prev;
+  }, 0);
+}
