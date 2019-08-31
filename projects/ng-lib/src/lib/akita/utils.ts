@@ -42,7 +42,7 @@ export function getNestedFieldValue<E extends DnlBaseEntity>(entity: E, fieldStr
 
   let value = entity;
   for (const field of fieldArray) {
-    if (!value) {
+    if (value === null || value === undefined) {
       return null;
     }
     value = value[field];

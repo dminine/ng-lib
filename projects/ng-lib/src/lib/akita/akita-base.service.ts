@@ -140,12 +140,12 @@ export function convertQueryForAkita<E extends DnlBaseEntity>(query: DnlQuery) {
         let av: any = getNestedFieldValue(a, sort.field);
         let bv: any = getNestedFieldValue(b, sort.field);
 
-        if (!av) {
-          av = sort.nullOrder === 'asc' ? Number.MAX_SAFE_INTEGER : Number.MIN_SAFE_INTEGER;
+        if (av === null || av === undefined) {
+          av = sort.nullOrder === 'desc' ? Number.MAX_SAFE_INTEGER : Number.MIN_SAFE_INTEGER;
         }
 
-        if (!bv) {
-          bv = sort.nullOrder === 'asc' ? Number.MAX_SAFE_INTEGER : Number.MIN_SAFE_INTEGER;
+        if (bv === null || bv === undefined) {
+          bv = sort.nullOrder === 'desc' ? Number.MAX_SAFE_INTEGER : Number.MIN_SAFE_INTEGER;
         }
 
         if (av < bv) {
