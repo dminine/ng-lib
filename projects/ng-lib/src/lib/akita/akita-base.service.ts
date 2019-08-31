@@ -137,8 +137,17 @@ export function convertQueryForAkita<E extends DnlBaseEntity>(query: DnlQuery) {
       for (const sort of query.sorts) {
         const order = sort.direction === 'asc' ? 1 : -1;
 
-        const av = getNestedFieldValue(a, sort.field);
-        const bv = getNestedFieldValue(b, sort.field);
+        let av: any = getNestedFieldValue(a, sort.field);
+        let bv: any = getNestedFieldValue(b, sort.field);
+
+        if (!av) {
+          av = sort.nullOrder === 'asc' ? Number.MAX_SAFE_INTEGER : Number.MIN_SAFE_INTEGER;
+        }
+
+        if (!bv) {
+          bv = sort.nullOrder === 'asc' ? Number.MAX_SAFE_INTEGER : Number.MIN_SAFE_INTEGER;
+        }
+
         if (av < bv) {
           return -1 * order;
         } else if (av > bv) {

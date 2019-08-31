@@ -16,6 +16,7 @@ export interface DnlQuery {
 export interface DnlSort {
   field: string;
   direction: 'asc' | 'desc';
+  nullOrder?: 'asc' | 'desc';
 }
 
 export interface DnlFilter {
