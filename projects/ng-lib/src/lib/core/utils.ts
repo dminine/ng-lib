@@ -109,11 +109,19 @@ export function convertArrayToHashMapById<T extends DnlBaseEntity>(array: T[]): 
 }
 
 export function sumProperty<T>(array: T[], property: keyof T): number {
-  return array.map(value => value[property]).reduce((prev, curr) => {
-    if (typeof curr === 'number') {
-      return prev + curr;
-    }
+  if (array.length > 0) {
+    return array.map(value => value[property]).reduce((prev, curr) => {
+      if (typeof +curr === 'number' && !isNaN(+curr)) {
+        return prev + +curr;
+      }
 
-    return prev;
-  }, 0);
+      return prev;
+    }, 0);
+  } else {
+    return 0;
+  }
+}
+
+export function convertToInternationalPhoneNumber(phoneNumber: string) {
+  return `+82${phoneNumber.split('-').join('').slice(1)}`;
 }
