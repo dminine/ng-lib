@@ -7,7 +7,7 @@ export abstract class FormControlBaseComponent<T = any> extends SubscriptionBase
   @Input()
   set value(value: T) {
     if (value && value !== this._value) {
-      this.formCtrl.setValue(value, { emitEvent: false });
+      this.resetControl(value);
     }
   }
   protected _value: T;
@@ -46,7 +46,7 @@ export abstract class FormControlBaseComponent<T = any> extends SubscriptionBase
   }
 
   writeValue(value: T): void {
-    this.formCtrl.setValue(value, { emitEvent: false });
+    this.resetControl(value);
   }
 
   protected initValueChange() {
@@ -54,8 +54,16 @@ export abstract class FormControlBaseComponent<T = any> extends SubscriptionBase
       distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
     ).subscribe(value => {
       this._value = value;
-      this.onChange(value);
-      this.valueChange.emit(this._value);
+      this.emit(value);
     });
+  }
+
+  protected resetControl(value: T) {
+    this.formCtrl.setValue(value, { emitEvent: false });
+  }
+
+  protected emit(value: T) {
+    this.onChange(value);
+    this.valueChange.emit(this._value);
   }
 }
