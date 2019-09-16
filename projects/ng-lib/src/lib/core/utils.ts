@@ -125,3 +125,34 @@ export function sumProperty<T>(array: T[], property: keyof T): number {
 export function convertToInternationalPhoneNumber(phoneNumber: string) {
   return `+82${phoneNumber.split('-').join('').slice(1)}`;
 }
+
+function isObject(val) {
+  if (val === null) {
+    return false;
+  }
+
+  return typeof val === 'function' || typeof val === 'object';
+}
+
+export function mergeDeep<T, S>(target, source): T & S {
+  const output = Object.assign({}, target);
+
+  if (isObject(target) && isObject(source)) {
+    for (const key in source) {
+      if (source.hasOwnProperty(key)) {
+        if (isObject(source[key])) {
+          if (!(key in target)) {
+            Object.assign(output, { [key]: source[key] });
+
+          } else {
+            output[key] = mergeDeep(target[key], source[key]);
+          }
+
+        } else {
+          Object.assign(output, { [key]: source[key] });
+        }
+      }
+    }
+  }
+  return output;
+}

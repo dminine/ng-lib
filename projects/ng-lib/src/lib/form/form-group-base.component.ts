@@ -9,7 +9,7 @@ import {
 import { Subscription, combineLatest, of } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';
 import { distinctUntilChanged, tap, filter, first } from 'rxjs/operators';
-import { SubscriptionBaseComponent, delayMicrotask } from '../core';
+import { SubscriptionBaseComponent, delayMicrotask, mergeDeep } from '../core';
 import { HashMap } from '../types';
 
 export function DnlFormGroup(constructor: Type<any>) {
@@ -185,10 +185,10 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
     const subFormGroupMap = this.formGroupComponents.reduce(
       (prev, curr) => {
         if (curr.flat) {
-          return { ...prev, ...curr.formGroup.controls };
+          return mergeDeep(prev, curr.formGroup.controls) as HashMap<AbstractControl>;
 
         } else {
-          return { ...prev, [curr.name || curr.constructor.name]: curr.formGroup };
+          return mergeDeep(prev, { [curr.name || curr.constructor.name]: curr.formGroup }) as HashMap<AbstractControl>;
         }
       },
       this.defaultControls
