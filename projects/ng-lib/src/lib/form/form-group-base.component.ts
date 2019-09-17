@@ -99,9 +99,11 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
   }
 
   setDisabledState(isDisabled: boolean): void {
+    isDisabled ? this.formGroup.disable() : this.formGroup.enable();
   }
 
-  writeValue(obj: any): void {
+  writeValue(value: T): void {
+    this.resetForm(value);
   }
 
   setChildFormGroup(childFormGroupComponent: FormGroupBaseComponent) {
@@ -138,13 +140,17 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
     this.formGroup.reset(value, { emitEvent: false });
   }
 
+  protected emit(value: T) {
+    this._value = value;
+    this.onChange(value);
+    this.valueChange.emit(value);
+  }
+
   protected initValueChange(): Subscription {
     return this.formGroup.valueChanges
       .pipe(distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)))
       .subscribe(value => {
-        this._value = value;
-        this.onChange(value);
-        this.valueChange.emit(this._value);
+        this.emit(value);
       });
   }
 

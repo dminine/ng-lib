@@ -53,7 +53,6 @@ export abstract class FormControlBaseComponent<T = any> extends SubscriptionBase
     return this.formCtrl.valueChanges.pipe(
       distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
     ).subscribe(value => {
-      this._value = value;
       this.emit(value);
     });
   }
@@ -63,7 +62,8 @@ export abstract class FormControlBaseComponent<T = any> extends SubscriptionBase
   }
 
   protected emit(value: T) {
+    this._value = value;
     this.onChange(value);
-    this.valueChange.emit(this._value);
+    this.valueChange.emit(value);
   }
 }
