@@ -137,7 +137,9 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
   }
 
   protected resetForm(value: T): void {
-    this.formGroup.reset(value, { emitEvent: false });
+    if (value) {
+      this.formGroup.reset(value, { emitEvent: false });
+    }
   }
 
   protected emit(value: T) {
