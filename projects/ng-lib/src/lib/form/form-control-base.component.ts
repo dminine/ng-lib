@@ -1,6 +1,5 @@
 import { OnInit, Input, EventEmitter, Output } from '@angular/core';
 import { FormControl, ValidatorFn, AbstractControlOptions, AsyncValidatorFn, ControlValueAccessor } from '@angular/forms';
-import { distinctUntilChanged } from 'rxjs/operators';
 import { SubscriptionBaseComponent } from '../core';
 
 export abstract class FormControlBaseComponent<T = any, C = any> extends SubscriptionBaseComponent implements OnInit, ControlValueAccessor {
@@ -50,9 +49,7 @@ export abstract class FormControlBaseComponent<T = any, C = any> extends Subscri
   }
 
   protected initValueChange() {
-    return this.formCtrl.valueChanges.pipe(
-      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
-    ).subscribe(value => {
+    return this.formCtrl.valueChanges.subscribe(value => {
       if (this.checkValidValue(value)) {
         this.emit(this.convertToEmitValue(value));
       }

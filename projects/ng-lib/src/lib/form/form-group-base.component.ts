@@ -8,7 +8,7 @@ import {
 } from '@angular/forms';
 import { Subscription, combineLatest, of } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';
-import { distinctUntilChanged, tap, filter, first } from 'rxjs/operators';
+import { tap, filter, first } from 'rxjs/operators';
 import { SubscriptionBaseComponent, delayMicrotask } from '../core';
 import { HashMap } from '../types';
 
@@ -137,13 +137,11 @@ export abstract class FormGroupBaseComponent<T = any, F = any> extends Subscript
   }
 
   protected initValueChange(): Subscription {
-    return this.formGroup.valueChanges
-      .pipe(distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)))
-      .subscribe(value => {
-        if (this.checkValidValue(value)) {
-          this.emit(this.convertToEmitValue(value));
-        }
-      });
+    return this.formGroup.valueChanges.subscribe(value => {
+      if (this.checkValidValue(value)) {
+        this.emit(this.convertToEmitValue(value));
+      }
+    });
   }
 
   protected initFormGroup() {
