@@ -53,7 +53,9 @@ export abstract class FormControlBaseComponent<T = any, C = any> extends Subscri
     return this.formCtrl.valueChanges.pipe(
       distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
     ).subscribe(value => {
-      this.emit(this.convertToEmitValue(value));
+      if (this.checkValidValue(value)) {
+        this.emit(this.convertToEmitValue(value));
+      }
     });
   }
 
@@ -73,5 +75,9 @@ export abstract class FormControlBaseComponent<T = any, C = any> extends Subscri
 
   protected convertToControlValue(value: T): C {
     return value as unknown as C;
+  }
+
+  protected checkValidValue(value: C): boolean {
+    return true;
   }
 }

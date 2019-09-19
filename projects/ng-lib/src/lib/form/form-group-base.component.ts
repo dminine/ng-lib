@@ -136,23 +136,13 @@ export abstract class FormGroupBaseComponent<T = any, F = any> extends Subscript
     this.formGroupChange.emit(this);
   }
 
-  protected resetForm(value: F): void {
-    if (value) {
-      this.formGroup.reset(value, { emitEvent: false });
-    }
-  }
-
-  protected emit(value: T) {
-    this._value = value;
-    this.onChange(value);
-    this.valueChange.emit(value);
-  }
-
   protected initValueChange(): Subscription {
     return this.formGroup.valueChanges
       .pipe(distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)))
       .subscribe(value => {
-        this.emit(this.convertToEmitValue(value));
+        if (this.checkValidValue(value)) {
+          this.emit(this.convertToEmitValue(value));
+        }
       });
   }
 
@@ -205,11 +195,27 @@ export abstract class FormGroupBaseComponent<T = any, F = any> extends Subscript
     this.formGroup = new FormGroup(subFormGroupMap, this.validatorOrOpts, this.asyncValidator);
   }
 
+  protected resetForm(value: F): void {
+    if (value) {
+      this.formGroup.reset(value, { emitEvent: false });
+    }
+  }
+
+  protected emit(value: T) {
+    this._value = value;
+    this.onChange(value);
+    this.valueChange.emit(value);
+  }
+
   protected convertToEmitValue(value: F): T {
     return value as unknown as T;
   }
 
   protected convertToFormValue(value: T): F {
     return value as unknown as F;
+  }
+
+  protected checkValidValue(value: F): boolean {
+    return true;
   }
 }
