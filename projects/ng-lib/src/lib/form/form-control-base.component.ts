@@ -3,11 +3,11 @@ import { FormControl, ValidatorFn, AbstractControlOptions, AsyncValidatorFn, Con
 import { distinctUntilChanged } from 'rxjs/operators';
 import { SubscriptionBaseComponent } from '../core';
 
-export abstract class FormControlBaseComponent<T = any> extends SubscriptionBaseComponent implements OnInit, ControlValueAccessor {
+export abstract class FormControlBaseComponent<T = any, C = any> extends SubscriptionBaseComponent implements OnInit, ControlValueAccessor {
   @Input()
   set value(value: T) {
     if (value && value !== this._value) {
-      this.resetControl(value);
+      this.resetControl(this.convertToControlValue(value));
     }
   }
   protected _value: T;
@@ -46,18 +46,18 @@ export abstract class FormControlBaseComponent<T = any> extends SubscriptionBase
   }
 
   writeValue(value: T): void {
-    this.resetControl(value);
+    this.resetControl(this.convertToControlValue(value));
   }
 
   protected initValueChange() {
     return this.formCtrl.valueChanges.pipe(
       distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
     ).subscribe(value => {
-      this.emit(value);
+      this.emit(this.convertToEmitValue(value));
     });
   }
 
-  protected resetControl(value: T) {
+  protected resetControl(value: C) {
     this.formCtrl.setValue(value, { emitEvent: false });
   }
 
@@ -65,5 +65,13 @@ export abstract class FormControlBaseComponent<T = any> extends SubscriptionBase
     this._value = value;
     this.onChange(value);
     this.valueChange.emit(value);
+  }
+
+  protected convertToEmitValue(value: C): T {
+    return value as unknown as T;
+  }
+
+  protected convertToControlValue(value: T): C {
+    return value as unknown as C;
   }
 }

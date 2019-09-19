@@ -37,7 +37,7 @@ export function DnlFormGroup(constructor: Type<any>) {
   return constructor;
 }
 
-export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseComponent
+export abstract class FormGroupBaseComponent<T = any, F = any> extends SubscriptionBaseComponent
   implements AfterViewInit, ControlValueAccessor {
 
   @Input() name: string;
@@ -57,7 +57,7 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
       this.isMadeFormGroup$.asObservable().pipe(
         first(isMade => isMade)
       ).subscribe(() => {
-        this.resetForm(value);
+        this.resetForm(this.convertToFormValue(value));
       });
     }
   }
@@ -103,7 +103,7 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
   }
 
   writeValue(value: T): void {
-    this.resetForm(value);
+    this.resetForm(this.convertToFormValue(value));
   }
 
   setChildFormGroup(childFormGroupComponent: FormGroupBaseComponent) {
@@ -136,7 +136,7 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
     this.formGroupChange.emit(this);
   }
 
-  protected resetForm(value: T): void {
+  protected resetForm(value: F): void {
     if (value) {
       this.formGroup.reset(value, { emitEvent: false });
     }
@@ -152,7 +152,7 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
     return this.formGroup.valueChanges
       .pipe(distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)))
       .subscribe(value => {
-        this.emit(value);
+        this.emit(this.convertToEmitValue(value));
       });
   }
 
@@ -203,5 +203,13 @@ export abstract class FormGroupBaseComponent<T = any> extends SubscriptionBaseCo
     );
 
     this.formGroup = new FormGroup(subFormGroupMap, this.validatorOrOpts, this.asyncValidator);
+  }
+
+  protected convertToEmitValue(value: F): T {
+    return value as unknown as T;
+  }
+
+  protected convertToFormValue(value: T): F {
+    return value as unknown as F;
   }
 }
