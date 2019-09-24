@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
+import { DnlReactiveFormsModule } from '../../../../../ng-lib/src/lib/form';
 
 import { FormRoutingModule } from './form-routing.module';
 import { FormPageComponent } from './components/form-page/form-page.component';
@@ -22,7 +23,8 @@ import { FormGroup5Component } from './components/form-group5/form-group5.compon
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    FormRoutingModule
+    FormRoutingModule,
+    DnlReactiveFormsModule
   ]
 })
 export class FormPageModule {}

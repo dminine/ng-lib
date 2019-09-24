@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { FormControl, Validators } from '@angular/forms';
+import { FormControl, Validators, FormGroup } from '@angular/forms';
 import { FormGroupBaseComponent, DnlFormGroup } from 'ng-lib';
 
 @DnlFormGroup
@@ -11,7 +11,17 @@ import { FormGroupBaseComponent, DnlFormGroup } from 'ng-lib';
 export class FormGroup2Component extends FormGroupBaseComponent {
 
   constructor() {
-    super({ formGroup2_1: new FormControl('', Validators.required) });
+    super({
+      formGroup2_1: new FormControl('', Validators.required),
+      formGroup2_group1: new FormGroup({
+        formGroup2_group1_1: new FormControl(null)
+      })
+    });
   }
 
+  protected convertToEmitValue(value: any): any {
+    console.log(value);
+    this.formGroup.get('formGroup2_group1').setValue({ formGroup2_group1_1: '메롱' }, { emitEvent: false });
+    return { ...value, formGroup2_group1: { formGroup2_group1_1: '메롱' } };
+  }
 }

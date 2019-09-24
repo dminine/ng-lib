@@ -1,8 +1,3 @@
-<app-form-group1
-  *ngIf="visibility"
-  name="abc"
-  [formControl]="testControl"
-  [doc]="test"
-  (valueChange)="onValueChange($event)"
-  (statusChange)="onStatusChange($event)"
-></app-form-group1>
+<div [formGroup]="formGroup">
+  <app-form-group4 [dnlFormGroupName]="[{ parent: 'a', child: 'b' }, { parent: 'b', child: 'a' }]"></app-form-group4>
+</div>
