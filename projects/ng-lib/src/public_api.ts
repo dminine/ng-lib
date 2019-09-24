@@ -11,4 +11,4 @@ export * from './lib/form/index';
 export * from './lib/shared/index';
 export * from './lib/table/index';
 export * from './lib/types/index';
-
+export * from './lib/storage/index';
