@@ -1,6 +1,6 @@
 import { Directive, Input, Optional, Self, Inject, SkipSelf, Host, OnInit } from '@angular/core';
 import { ControlContainer, FormGroup } from '@angular/forms';
-import { distinctUntilChanged } from 'rxjs/operators';
+import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { SubscriptionBaseComponent } from '../core';
 import { DNL_FORM_GROUP } from './tokens';
 import { DnlFormGroup, FormGroupNameConverter } from './types';
@@ -15,6 +15,7 @@ export class FormGroupNameDirective extends SubscriptionBaseComponent implements
   @Input('dnlFormGroupName') nameMap: FormGroupNameConverter;
 
   private nameConverter: FormGroupNameConverter;
+  private emittedFormValue: any;
 
   constructor(
     @Optional() @Host() @SkipSelf() private parent: ControlContainer,
@@ -34,23 +35,18 @@ export class FormGroupNameDirective extends SubscriptionBaseComponent implements
 
     childFormGroup.patchValue(this.convertFormValue('toChild', parentFormGroup.value));
 
-    this.addSubscription(this.setUpUpstreamPipeline(parentFormGroup, childFormGroup));
-    this.addSubscription(this.setUpDownstreamPipeline(parentFormGroup, childFormGroup));
+    this.addSubscription(this.setUpPipeline('toChild', parentFormGroup, childFormGroup));
+    this.addSubscription(this.setUpPipeline('toParent', childFormGroup, parentFormGroup));
   }
 
-  private setUpUpstreamPipeline(parentFormGroup: FormGroup, childFormGroup: FormGroup) {
-    return childFormGroup.valueChanges.pipe(
-      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
-    ).subscribe(childFormValue => {
-      parentFormGroup.patchValue(this.convertFormValue('toParent', childFormValue));
-    });
-  }
-
-  private setUpDownstreamPipeline(parentFormGroup: FormGroup, childFormGroup: FormGroup) {
-    return parentFormGroup.valueChanges.pipe(
-      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
+  private setUpPipeline(type: 'toParent' | 'toChild', from: FormGroup, to: FormGroup) {
+    return from.valueChanges.pipe(
+      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
+      filter(value => JSON.stringify(this.emittedFormValue) !== JSON.stringify(value))
     ).subscribe(parentFormValue => {
-      childFormGroup.patchValue(this.convertFormValue('toChild', parentFormValue));
+      to.patchValue(this.convertFormValue(type, parentFormValue), { emitEvent: false });
+      this.emittedFormValue = to.value;
+      to.updateValueAndValidity();
     });
   }
 
