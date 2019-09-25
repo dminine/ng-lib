@@ -1,10 +1,10 @@
-import { Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Input, Output, EventEmitter, AfterViewInit } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-import { Subscription } from 'rxjs';
-import { distinctUntilChanged } from 'rxjs/operators';
+import { Subscription, BehaviorSubject } from 'rxjs';
+import { distinctUntilChanged, first } from 'rxjs/operators';
 import { SubscriptionBaseComponent } from '../core';
 
-export abstract class FormGroupBaseComponent<T = any, F = any> extends SubscriptionBaseComponent implements OnInit {
+export abstract class FormGroupBaseComponent<T = any, F = any> extends SubscriptionBaseComponent implements AfterViewInit {
   @Input()
   get doc(): T { return this._doc; }
   set doc(doc: T) {
@@ -16,7 +16,11 @@ export abstract class FormGroupBaseComponent<T = any, F = any> extends Subscript
   @Input()
   set value(value: T) {
     if (value && value !== this._value) {
-      this.resetForm(this.convertToFormValue(value));
+      this.isReady$.asObservable().pipe(
+        first(isMade => isMade)
+      ).subscribe(() => {
+        this.resetForm(this.convertToFormValue(value));
+      });
     }
   }
   protected _value: T;
@@ -26,6 +30,8 @@ export abstract class FormGroupBaseComponent<T = any, F = any> extends Subscript
 
   formGroup: FormGroup;
 
+  protected isReady$ = new BehaviorSubject<boolean>(false);
+
   protected constructor(
     formGroup?: FormGroup
   ) {
@@ -34,9 +40,10 @@ export abstract class FormGroupBaseComponent<T = any, F = any> extends Subscript
     this.formGroup = formGroup;
   }
 
-  ngOnInit(): void {
-    this.addSubscription(this.initValueChange());
-    this.addSubscription(this.initStatusChange());
+  ngAfterViewInit(): void {
+    this.setSubscription('valueChange', this.initValueChange());
+    this.setSubscription('statusChange', this.initStatusChange());
+    this.isReady$.next(true);
   }
 
   protected initValueChange(): Subscription {

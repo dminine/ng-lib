@@ -1,22 +1,20 @@
-import { Component, OnInit, forwardRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
-import { DNL_FORM_GROUP } from '../../../../../../../ng-lib/src/lib/form';
-import { DnlFormGroup } from '../../../../../../../ng-lib/src/lib/form';
+import { FormGroupBaseComponent } from '../../../../../../../ng-lib/src/lib/form';
 
 @Component({
   selector: 'app-form-group4',
   templateUrl: './form-group4.component.html',
-  styleUrls: ['./form-group4.component.scss'],
-  providers: [
-    { provide: DNL_FORM_GROUP, useExisting: forwardRef(() => FormGroup4Component) }
-  ]
+  styleUrls: ['./form-group4.component.scss']
 })
-export class FormGroup4Component implements OnInit, DnlFormGroup {
+export class FormGroup4Component extends FormGroupBaseComponent implements OnInit {
   formGroup = this.createForm();
 
   constructor(
     private fb: FormBuilder
-  ) { }
+  ) {
+    super();
+  }
 
   ngOnInit() {
     this.formGroup.valueChanges.subscribe(value => {
