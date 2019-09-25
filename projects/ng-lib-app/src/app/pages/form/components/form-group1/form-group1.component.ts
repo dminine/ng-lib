@@ -1,8 +1,7 @@
 import { Component } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
-import { FormGroupBaseComponent, DnlFormGroup } from 'ng-lib';
+import { FormGroupBaseComponent } from 'ng-lib';
 
-@DnlFormGroup
 @Component({
   selector: 'app-form-group1',
   templateUrl: './form-group1.component.html',
@@ -13,7 +12,7 @@ export class FormGroup1Component extends FormGroupBaseComponent {
   constructor(
     private fb: FormBuilder
   ) {
-    super({ formGroup1_1: fb.control(['']) });
+    super(fb.group({ formGroup1_1: fb.control(['']) }));
   }
 
 }

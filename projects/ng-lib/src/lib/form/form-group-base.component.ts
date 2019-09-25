@@ -1,6 +1,7 @@
 import { Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import { distinctUntilChanged } from 'rxjs/operators';
 import { SubscriptionBaseComponent } from '../core';
 
 export abstract class FormGroupBaseComponent<T = any, F = any> extends SubscriptionBaseComponent implements OnInit {
@@ -39,7 +40,9 @@ export abstract class FormGroupBaseComponent<T = any, F = any> extends Subscript
   }
 
   protected initValueChange(): Subscription {
-    return this.formGroup.valueChanges.subscribe(value => {
+    return this.formGroup.valueChanges.pipe(
+      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
+    ).subscribe(value => {
       if (this.checkValidValue(value)) {
         this.emit(this.convertToEmitValue(value));
       }
@@ -54,7 +57,7 @@ export abstract class FormGroupBaseComponent<T = any, F = any> extends Subscript
 
   protected resetForm(value: F): void {
     if (value) {
-      this.formGroup.reset(value, { emitEvent: false });
+      this.formGroup.reset(value);
     }
   }
 

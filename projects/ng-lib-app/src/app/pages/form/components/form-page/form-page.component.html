@@ -1,3 +1,7 @@
 <div [formGroup]="formGroup">
-  <app-form-group4 [dnlFormGroupName]="[{ parent: 'a', child: 'b' }, { parent: 'b', child: 'a' }]"></app-form-group4>
+  <ng-container formGroupName="a">
+    <ng-container formGroupName="b">
+      <app-form-group4 dnlFormGroupName></app-form-group4>
+    </ng-container>
+  </ng-container>
 </div>

@@ -1,7 +1,7 @@
-import { Component, OnInit, forwardRef, Inject } from '@angular/core';
-import { FormGroup, FormBuilder } from '@angular/forms';
-import { DNL_FORM_GROUP } from '../../../../../../../ng-lib/src/lib/form/tokens';
-import { DnlFormGroup } from '../../../../../../../ng-lib/src/lib/form/types';
+import { Component, OnInit, forwardRef } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
+import { DNL_FORM_GROUP } from '../../../../../../../ng-lib/src/lib/form';
+import { DnlFormGroup } from '../../../../../../../ng-lib/src/lib/form';
 
 @Component({
   selector: 'app-form-group4',

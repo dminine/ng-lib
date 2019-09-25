@@ -1,8 +1,7 @@
 import { Component } from '@angular/core';
-import { FormControl } from '@angular/forms';
-import { FormGroupBaseComponent, DnlFormGroup } from 'ng-lib';
+import { FormControl, FormGroup } from '@angular/forms';
+import { FormGroupBaseComponent } from 'ng-lib';
 
-@DnlFormGroup
 @Component({
   selector: 'app-form-group3',
   templateUrl: './form-group3.component.html',
@@ -13,11 +12,11 @@ export class FormGroup3Component extends FormGroupBaseComponent {
 
   constructor() {
     super(
-      {
+      new FormGroup({
         formGroup3_1: new FormControl('2'),
         formGroup3_2: new FormControl('3'),
         formGroup3_3: new FormControl('4'),
-      }
+      })
     );
     setTimeout(() => {
       this.visibility = true;

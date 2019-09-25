@@ -14,9 +14,11 @@ export class FormPageComponent implements OnInit {
 
   formGroup = new FormGroup({
     a: new FormGroup({
-      a: new FormControl(null),
-    }),
-    b: new FormControl(null)
+      b: new FormGroup({
+        a: new FormControl(null),
+        b: new FormControl(null)
+      })
+    })
   });
 
   constructor() { }
@@ -31,9 +33,11 @@ export class FormPageComponent implements OnInit {
     setTimeout(() => {
       this.formGroup.setValue({
         a: {
-          a: '1'
-        },
-        b: '2'
+          b: {
+            a: '1',
+            b: '2'
+          }
+        }
       });
       this.test = {
         formGroup1_1: 'test',
