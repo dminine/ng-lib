@@ -23,10 +23,14 @@ export abstract class FormGroupBaseComponent<T = any, F = any> extends Subscript
   @Output() valueChange = new EventEmitter<T>();
   @Output() statusChange = new EventEmitter<any>();
 
+  formGroup: FormGroup;
+
   protected constructor(
-    protected formGroup: FormGroup
+    formGroup?: FormGroup
   ) {
     super();
+
+    this.formGroup = formGroup;
   }
 
   ngOnInit(): void {
