@@ -32,6 +32,8 @@ export class FormGroupNameDirective extends SubscriptionBaseComponent implements
     const parentFormGroup = this.parent.control as FormGroup;
     const childFormGroup = this.formGroupAccessor.formGroup;
 
+    childFormGroup.patchValue(this.convertFormValue('toChild', parentFormGroup.value));
+
     this.addSubscription(this.setUpUpstreamPipeline(parentFormGroup, childFormGroup));
     this.addSubscription(this.setUpDownstreamPipeline(parentFormGroup, childFormGroup));
   }
