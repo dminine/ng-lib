@@ -12,31 +12,6 @@ import { tap, filter, first } from 'rxjs/operators';
 import { SubscriptionBaseComponent, delayMicrotask } from '../core';
 import { HashMap } from '../types';
 
-export function DnlFormGroup(constructor: Type<any>) {
-  if (!(constructor as any).__annotations__) {
-    throw new Error('Must be in front of Component decorator.');
-  }
-
-  const annotation: Component = (constructor as any).__annotations__[0];
-  const formGroupProvider = {
-    provide: FormGroupBaseComponent,
-    useExisting: forwardRef(() => constructor)
-  };
-  const valueAccessorProvider = {
-    provide: NG_VALUE_ACCESSOR,
-    useExisting: forwardRef(() => constructor),
-    multi: true
-  };
-
-  if (annotation.providers) {
-    annotation.providers.push(formGroupProvider, valueAccessorProvider);
-  } else {
-    annotation.providers = [formGroupProvider, valueAccessorProvider];
-  }
-
-  return constructor;
-}
-
 export abstract class FormGroupBaseComponent<T = any, F = any> extends SubscriptionBaseComponent
   implements AfterViewInit, ControlValueAccessor {
 
