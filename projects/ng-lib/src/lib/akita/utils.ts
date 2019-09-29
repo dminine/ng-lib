@@ -1,4 +1,4 @@
-import { DnlFilterComparison, DnlQuery, DnlAkitaOptions, DnlBaseEntity } from './types';
+import { DnlFilterComparison, DnlBaseEntity, DnlField } from './types';
 
 
 export function convertStringComparisonToCond(
@@ -37,7 +37,7 @@ export function convertStringComparisonToCond(
   return false;
 }
 
-export function getNestedFieldValue<E extends DnlBaseEntity>(entity: E, fieldString: string) {
+export function getNestedFieldValue<E extends DnlBaseEntity>(entity: E, fieldString: DnlField<E>) {
   const fieldArray = fieldString.split('.');
 
   let value = entity;

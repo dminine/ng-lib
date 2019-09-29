@@ -74,7 +74,7 @@ export class DnlFirestoreService<
     );
   }
 
-  list(query?: DnlQuery, options: DnlFirestoreOptions = {}): ColdObservable<E[]> {
+  list(query?: DnlQuery<E>, options: DnlFirestoreOptions = {}): ColdObservable<E[]> {
     if (this.checkQueryIsLoading(query, options)) {
       return this.delayTask(query, options);
     }
@@ -88,7 +88,7 @@ export class DnlFirestoreService<
     );
   }
 
-  infinityList(query: DnlQuery = {}, options: DnlFirestoreOptions = {}): DnlInfinityList<E> {
+  infinityList(query: DnlQuery<E> = {}, options: DnlFirestoreOptions = {}): DnlInfinityList<E> {
     let page = query.page || 1;
     const perPage = query.perPage || this.defaultPerPage;
 
@@ -128,7 +128,7 @@ export class DnlFirestoreService<
     };
   }
 
-  count(query?: DnlQuery, options: DnlFirestoreOptions = {}): ColdObservable<number> {
+  count(query?: DnlQuery<E>, options: DnlFirestoreOptions = {}): ColdObservable<number> {
     let path = 'counts/';
 
     if (this.parentNames) {
@@ -251,7 +251,7 @@ export class DnlFirestoreService<
     return subject.asObservable();
   }
 
-  protected listFromBackend(query: DnlQuery = {}, options: DnlFirestoreOptions = {}): HotObservable<boolean> {
+  protected listFromBackend(query: DnlQuery<E> = {}, options: DnlFirestoreOptions = {}): HotObservable<boolean> {
     if (Boolean(options.ignoreCache)) {
       return this.ignoreCacheListFromBackend(query, options);
     } else {
@@ -331,7 +331,7 @@ export class DnlFirestoreService<
     });
   }
 
-  protected checkQueryIsLoading(query: DnlQuery, options: DnlFirestoreOptions): boolean {
+  protected checkQueryIsLoading(query: DnlQuery<E>, options: DnlFirestoreOptions): boolean {
     if (Boolean(options.ignoreCache)) {
       return false;
     }
@@ -341,7 +341,7 @@ export class DnlFirestoreService<
     return this.cachedQuery[queryStr] && this.cachedQuery[queryStr].status === 'loading';
   }
 
-  protected delayTask(query: DnlQuery, options: DnlFirestoreOptions): HotObservable<E[]> {
+  protected delayTask(query: DnlQuery<E>, options: DnlFirestoreOptions): HotObservable<E[]> {
     const queryStr = convertQueryToString(query, options);
 
     const subject = new Subject<void>();
@@ -349,7 +349,7 @@ export class DnlFirestoreService<
     return subject.asObservable().pipe(switchMap(() => this.list(query, options)));
   }
 
-  protected ignoreCacheListFromBackend(query: DnlQuery, options: DnlFirestoreOptions): HotObservable<boolean> {
+  protected ignoreCacheListFromBackend(query: DnlQuery<E>, options: DnlFirestoreOptions): HotObservable<boolean> {
     const subject = new Subject<boolean>();
 
     const queryFn = query && convertQueryForFirestore(query);
@@ -369,7 +369,7 @@ export class DnlFirestoreService<
     return subject.asObservable();
   }
 
-  protected cacheListFromBackend(query: DnlQuery, options: DnlFirestoreOptions): HotObservable<boolean> {
+  protected cacheListFromBackend(query: DnlQuery<E>, options: DnlFirestoreOptions): HotObservable<boolean> {
     const queryStr = convertQueryToString(query, options);
 
     if (isNotCached(this.cachedQuery[queryStr], query)) {

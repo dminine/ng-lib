@@ -25,14 +25,14 @@ export abstract class DnlAkitaBaseService<S, E extends DnlBaseEntity> {
     return this.getManyFromBackend(ids, options).pipe(switchMap(() => this.query.selectMany(ids)));
   }
 
-  list(query?: DnlQuery, options?: DnlAkitaOptions): ColdObservable<E[]> {
+  list(query?: DnlQuery<E>, options?: DnlAkitaOptions): ColdObservable<E[]> {
     return this.listFromBackend(query, options).pipe(
       switchMap(() => this.query.selectAll(convertQueryForAkita(query))),
       map(this.sliceEntity(query).bind(this))
     );
   }
 
-  infinityList(query?: DnlQuery, options?: DnlAkitaOptions): DnlInfinityList<E> {
+  infinityList(query?: DnlQuery<E>, options?: DnlAkitaOptions): DnlInfinityList<E> {
     query = query || {};
     let page = query.page || 1;
     const perPage = query.perPage || this.defaultPerPage;
@@ -77,7 +77,7 @@ export abstract class DnlAkitaBaseService<S, E extends DnlBaseEntity> {
     this.store.setActive(id as any);
   }
 
-  count?(query?: DnlQuery, options?: DnlAkitaOptions): ColdObservable<number>;
+  count?(query?: DnlQuery<E>, options?: DnlAkitaOptions): ColdObservable<number>;
   abstract add(entity: Partial<E>, options?: DnlAkitaOptions): HotObservable<E>;
   abstract update(id: string, update: Partial<E>, options?: DnlAkitaOptions): Promise<void>;
   abstract upsert(id: string, entity: Partial<E>, options?: DnlAkitaOptions): HotObservable<E>;
@@ -86,9 +86,9 @@ export abstract class DnlAkitaBaseService<S, E extends DnlBaseEntity> {
   abstract decrease(id: string, field: keyof E, decrease: number, options?: DnlAkitaOptions): Promise<void>;
 
   protected abstract getManyFromBackend(ids: string[], options?: DnlAkitaOptions): HotObservable<void>;
-  protected abstract listFromBackend(query?: DnlQuery, options?: DnlAkitaOptions): HotObservable<boolean>;
+  protected abstract listFromBackend(query?: DnlQuery<E>, options?: DnlAkitaOptions): HotObservable<boolean>;
 
-  protected sliceEntity(query: DnlQuery = {}) {
+  protected sliceEntity(query: DnlQuery<E> = {}) {
     return (e: E[]) => {
       if (query.page || query.perPage) {
         const page = query.page || 1;
@@ -102,7 +102,7 @@ export abstract class DnlAkitaBaseService<S, E extends DnlBaseEntity> {
 }
 
 
-export function convertQueryForAkita<E extends DnlBaseEntity>(query: DnlQuery) {
+export function convertQueryForAkita<E extends DnlBaseEntity>(query: DnlQuery<E>) {
   const q: SelectOptions<E> = {};
 
   if (!query) {

@@ -3,14 +3,14 @@ import { firestore } from 'firebase/app';
 import { DnlQuery, DnlAkitaOptions } from '../akita';
 import { CachedQuery, DnlFirestoreOptions } from './types';
 
-export function convertQueryToString(query: DnlQuery = {}, options: DnlAkitaOptions = {}): string {
+export function convertQueryToString<E>(query: DnlQuery<E> = {}, options: DnlAkitaOptions = {}): string {
   const copiedQuery = JSON.parse(JSON.stringify({ ...query, ...options }));
   delete copiedQuery.page;
   delete copiedQuery.perPage;
   return JSON.stringify(copiedQuery);
 }
 
-export function convertQueryForFirestore(query: DnlQuery, cachedQuery: CachedQuery = {}): QueryFn {
+export function convertQueryForFirestore<E>(query: DnlQuery<E>, cachedQuery: CachedQuery = {}): QueryFn {
   return (fQuery: firestore.Query) => {
     let q = fQuery;
 
@@ -46,7 +46,7 @@ export function convertQueryForFirestore(query: DnlQuery, cachedQuery: CachedQue
   };
 }
 
-export function calcLimit(query: DnlQuery = {}, cachedQuery: CachedQuery = {}) {
+export function calcLimit<E>(query: DnlQuery<E> = {}, cachedQuery: CachedQuery = {}) {
   const page = query.page || 1;
   const perPage = query.perPage || 20;
   let limit = page * perPage;
@@ -58,7 +58,7 @@ export function calcLimit(query: DnlQuery = {}, cachedQuery: CachedQuery = {}) {
   return limit;
 }
 
-export function pushParentsFiltering(query: DnlQuery, options: DnlFirestoreOptions): DnlQuery {
+export function pushParentsFiltering<E>(query: DnlQuery<E>, options: DnlFirestoreOptions): DnlQuery<E> {
   if (options.group || !options.parents) {
     return query;
   }
@@ -72,7 +72,7 @@ export function pushParentsFiltering(query: DnlQuery, options: DnlFirestoreOptio
   };
 }
 
-export function isNotCached(cachedQuery: CachedQuery, query: DnlQuery): boolean {
+export function isNotCached<E>(cachedQuery: CachedQuery, query: DnlQuery<E>): boolean {
   return !cachedQuery || (cachedQuery.total < query.page * query.perPage && cachedQuery.hasMore);
 }
 

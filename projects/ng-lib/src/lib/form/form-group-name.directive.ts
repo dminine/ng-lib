@@ -37,6 +37,13 @@ export class FormGroupNameDirective extends SubscriptionBaseComponent implements
 
     this.addSubscription(this.setUpPipeline('toChild', parentFormGroup, childFormGroup));
     this.addSubscription(this.setUpPipeline('toParent', childFormGroup, parentFormGroup));
+
+
+    this.setUpDisabledPipeline(parentFormGroup, childFormGroup);
+    // if (childFormGroup.controls[0].updateOn.) {
+    //   control.registerOnDisabledChange(
+    //     (isDisabled: boolean) => { dir.valueAccessor !.setDisabledState !(isDisabled); });
+    // }
   }
 
   private setUpPipeline(type: 'toParent' | 'toChild', from: FormGroup, to: FormGroup) {
@@ -65,5 +72,13 @@ export class FormGroupNameDirective extends SubscriptionBaseComponent implements
     }
 
     return toValue;
+  }
+
+  private setUpDisabledPipeline(parentFormGroup: FormGroup, childFormGroup: FormGroup) {
+    for (const i in parentFormGroup.controls) {
+      if (parentFormGroup.controls.hasOwnProperty(i)) {
+        // parentFormGroup.controls[i]
+      }
+    }
   }
 }
