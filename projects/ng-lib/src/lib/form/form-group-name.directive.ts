@@ -48,8 +48,7 @@ export class FormGroupNameDirective extends SubscriptionBaseComponent implements
 
   private setUpPipeline(type: 'toParent' | 'toChild', from: FormGroup, to: FormGroup) {
     return from.valueChanges.pipe(
-      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
-      filter(value => JSON.stringify(this.emittedFormValue) !== JSON.stringify(value))
+      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
     ).subscribe(parentFormValue => {
       to.patchValue(this.convertFormValue(type, parentFormValue), { emitEvent: false });
       this.emittedFormValue = to.value;
