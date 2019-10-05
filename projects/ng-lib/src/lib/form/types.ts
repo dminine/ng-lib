@@ -1,8 +1,13 @@
-import { FormGroup } from '@angular/forms';
+import { DnlFormGroup } from './form-group';
 
 
-export interface DnlFormGroup {
-  formGroup: FormGroup;
+export interface DnlGroupValueAccessor {
+  formGroup: DnlFormGroup;
 }
 
-export type FormGroupNameConverter = { parent: string, child: string }[];
+export type FormGroupNameConverter = NameMap[] | string[] | string;
+
+export interface NameMap {
+  parent: string;
+  child: string;
+}

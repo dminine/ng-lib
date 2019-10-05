@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import { DnlFormGroup } from './types';
+import { DnlGroupValueAccessor } from './types';
 
 
-export const DNL_FORM_GROUP = new InjectionToken<DnlFormGroup>('dnl-form-group');
+export const DNL_GROUP_VALUE_ACCESSOR = new InjectionToken<DnlGroupValueAccessor>('dnl-group-value-accessor');

@@ -1,3 +1,5 @@
 <ng-container [formGroup]="formGroup">
-  <app-form-group5 dnlFormGroupName></app-form-group5>
+  <app-form-group5 dnlFormGroupName="a" [nameConverter]="['cd as ab', 'c']"></app-form-group5>
+
+  <input formControlName="b" type="text">
 </ng-container>

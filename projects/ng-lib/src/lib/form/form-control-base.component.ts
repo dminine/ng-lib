@@ -1,6 +1,6 @@
 import { OnInit, Input, EventEmitter, Output } from '@angular/core';
 import { FormControl, ValidatorFn, AbstractControlOptions, AsyncValidatorFn, ControlValueAccessor } from '@angular/forms';
-import { SubscriptionBaseComponent } from '../core';
+import { SubscriptionBaseComponent, delayMicrotask } from '../core';
 
 export abstract class FormControlBaseComponent<T = any, C = any> extends SubscriptionBaseComponent implements OnInit, ControlValueAccessor {
   @Input()
@@ -15,8 +15,8 @@ export abstract class FormControlBaseComponent<T = any, C = any> extends Subscri
 
   formCtrl: FormControl;
 
-  onChange: any = () => {};
-  onTouch: any = () => {};
+  protected onChange: any = () => {};
+  protected onTouch: any = () => {};
 
   protected constructor(
     protected formState?: any,
@@ -29,7 +29,7 @@ export abstract class FormControlBaseComponent<T = any, C = any> extends Subscri
   }
 
   ngOnInit(): void {
-    this.subscription.add(this.initValueChange());
+    this.setSubscription('value-change', this.initValueChange());
   }
 
   registerOnChange(fn: any): void {
@@ -50,9 +50,11 @@ export abstract class FormControlBaseComponent<T = any, C = any> extends Subscri
 
   protected initValueChange() {
     return this.formCtrl.valueChanges.subscribe(value => {
-      if (this.checkValidValue(value)) {
-        this.emit(this.convertToEmitValue(value));
-      }
+      delayMicrotask(() => {
+        if (this.checkValidValue(value)) {
+          this.emit(this.convertToEmitValue(value));
+        }
+      });
     });
   }
 

@@ -1,24 +1,32 @@
-import { Component, forwardRef } from '@angular/core';
-import { FormGroup, FormControl } from '@angular/forms';
-import { DnlFormGroup, DNL_FORM_GROUP } from '../../../../../../../ng-lib/src/lib/form';
+import { Component, forwardRef, AfterContentInit } from '@angular/core';
+import { delayTask } from '../../../../../../../ng-lib/src/lib/core';
+import { DnlGroupValueAccessor, DNL_GROUP_VALUE_ACCESSOR } from '../../../../../../../ng-lib/src/lib/form';
+import { DnlFormGroup } from '../../../../../../../ng-lib/src/lib/form/form-group';
 
 @Component({
   selector: 'app-form-group5',
   templateUrl: './form-group5.component.html',
   styleUrls: ['./form-group5.component.scss'],
   providers: [
-    { provide: DNL_FORM_GROUP, useExisting: forwardRef(() => FormGroup5Component) }
+    { provide: DNL_GROUP_VALUE_ACCESSOR, useExisting: forwardRef(() => FormGroup5Component) }
   ]
 })
-export class FormGroup5Component implements DnlFormGroup {
-  formGroup = new FormGroup({
-    a: new FormControl(null),
-    b: new FormControl(null)
-  });
+export class FormGroup5Component implements AfterContentInit, DnlGroupValueAccessor {
+  formGroup: DnlFormGroup;
 
   constructor() {
+  }
+
+  ngAfterContentInit(): void {
+    this.formGroup.get('cd').valueChanges.subscribe(value => {
+      console.log('5.cd', value);
+    });
     this.formGroup.valueChanges.subscribe(value => {
       console.log('5', value);
     });
+    this.formGroup.statusChanges.subscribe(status => {
+      console.log('5', status);
+    });
   }
+
 }

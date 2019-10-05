@@ -2,7 +2,7 @@ import { Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { distinctUntilChanged } from 'rxjs/operators';
-import { SubscriptionBaseComponent } from '../core';
+import { SubscriptionBaseComponent, delayMicrotask } from '../core';
 
 export abstract class FormGroupBaseComponent<T = any, F = any> extends SubscriptionBaseComponent implements OnInit {
   @Input()
@@ -35,17 +35,22 @@ export abstract class FormGroupBaseComponent<T = any, F = any> extends Subscript
   }
 
   ngOnInit(): void {
-    this.setSubscription('valueChange', this.initValueChange());
-    this.setSubscription('statusChange', this.initStatusChange());
+    this.setSubscription('value-change', this.initValueChange());
+    this.setSubscription('status-change', this.initStatusChange());
+    delayMicrotask(() => {
+      this.formGroup.updateValueAndValidity();
+    });
   }
 
   protected initValueChange(): Subscription {
     return this.formGroup.valueChanges.pipe(
       distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
     ).subscribe(value => {
-      if (this.checkValidValue(value)) {
-        this.emit(this.convertToEmitValue(value));
-      }
+      delayMicrotask(() => {
+        if (this.checkValidValue(value)) {
+          this.emit(this.convertToEmitValue(value));
+        }
+      });
     });
   }
 
