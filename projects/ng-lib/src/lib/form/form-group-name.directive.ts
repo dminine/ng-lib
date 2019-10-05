@@ -24,8 +24,14 @@ export class FormGroupNameDirective extends SubscriptionBaseComponent implements
   }
 
   private setFormValue() {
+    const formGroup = this.name ? this.parent.control.get(this.name) as FormGroup : this.parent.control as FormGroup;
+
+    if (!(formGroup instanceof FormGroup)) {
+      throw new Error('선택 된 Control은 FormGroup이 아닙니다');
+    }
+
     this.groupValueAccessor.formGroup = new DnlFormGroup(
-      this.parent.control.get(this.name) as FormGroup,
+      formGroup,
       this.nameConverter
     );
   }
