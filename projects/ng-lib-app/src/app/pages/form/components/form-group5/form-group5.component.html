@@ -1,4 +1,11 @@
 <form [formGroup]="formGroup" novalidate>
-  <input formControlName="cd" type="text">
-  <input formControlName="c" type="text">
+  <ng-container formGroupName="a">
+    <input formControlName="ab" type="text">
+    <input formControlName="c" type="text">
+  </ng-container>
+
+  <ng-container formGroupName="b">
+    <input formControlName="d" type="text">
+    <input formControlName="e" type="text">
+  </ng-container>
 </form>

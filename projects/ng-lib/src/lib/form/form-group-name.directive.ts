@@ -32,6 +32,7 @@ export class FormGroupNameDirective extends SubscriptionBaseComponent implements
 
     this.groupValueAccessor.formGroup = new DnlFormGroup(
       formGroup,
+      this.groupValueAccessor.controlTypeMap,
       this.nameConverter
     );
   }

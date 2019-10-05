@@ -24,11 +24,15 @@ export class FormGroup4Component extends FormGroupBaseComponent implements OnIni
 
   private createForm() {
     return this.fb.group({
-      a: this.fb.group({
+      e: this.fb.group({
         ab: [null],
         c: [null]
       }),
-      b: [null]
+      f: this.fb.group({
+        d: [null],
+        e: [null]
+      }),
+      c: [null]
     });
   }
 }

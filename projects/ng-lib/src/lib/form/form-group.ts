@@ -1,8 +1,8 @@
 import { EventEmitter } from '@angular/core';
-import { FormGroup, AbstractControl } from '@angular/forms';
-import { map } from 'rxjs/operators';
+import { FormGroup, AbstractControl, FormArray, FormControl } from '@angular/forms';
+import { map, distinctUntilChanged } from 'rxjs/operators';
 import { HashMap } from '../types';
-import { FormGroupNameConverter, NameMap } from './types';
+import { FormGroupNameConverter, NameMap, AbstractControlType } from './types';
 
 export class DnlFormGroup extends FormGroup {
   controls: HashMap<AbstractControl>;
@@ -13,7 +13,8 @@ export class DnlFormGroup extends FormGroup {
 
   constructor(
     protected formGroup: FormGroup,
-    protected nameConverter: FormGroupNameConverter
+    protected controlTypeMap: HashMap<AbstractControlType>,
+    protected nameConverter?: FormGroupNameConverter
   ) {
     super({}, formGroup.validator, formGroup.asyncValidator);
 
@@ -39,70 +40,96 @@ export class DnlFormGroup extends FormGroup {
     this.formGroup.updateValueAndValidity(options);
   }
 
-  private setControls(controls: HashMap<AbstractControl>): HashMap<AbstractControl> {
-    if (!this.nameMaps) {
-      return controls;
+  private convertToNameMap(): NameMap[] {
+    let nameMaps: FormGroupNameConverter = this.nameConverter;
+
+    if (this.nameConverter) {
+      if (typeof nameMaps === 'string') {
+        nameMaps = nameMaps.split(',').map(nc => nc.trim());
+      }
+
+      for (let i = 0; i < nameMaps.length; i++) {
+        const nameMap = nameMaps[i];
+
+        if (typeof nameMap === 'string') {
+          const splitNamMap = nameMap.split(' as ').map(nm => nm.trim());
+
+          if (splitNamMap.length === 1) {
+            nameMaps[i] = { parent: splitNamMap[0], child: splitNamMap[0] };
+          } else if (splitNamMap.length === 2) {
+            nameMaps[i] = { parent: splitNamMap[1], child: splitNamMap[0] };
+          } else {
+            throw new Error('nameMap length 오류');
+          }
+        }
+      }
+
+    } else {
+      nameMaps = Object.keys(this.controlTypeMap).map(key => ({ parent: key, child: key }));
+
     }
 
+    return nameMaps as NameMap[];
+  }
+
+  private setControls(controls: HashMap<AbstractControl>): HashMap<AbstractControl> {
     const childControls = {} as HashMap<AbstractControl>;
 
     for (const nameMap of this.nameMaps) {
+      if (!this.controlTypeMap[nameMap.child]) {
+        throw new Error(`nameConverter 설정이 잘못되었습니다: ${nameMap.child}`);
+      }
+
+      if (!this.checkControlType(this.controlTypeMap[nameMap.child], controls[nameMap.parent])) {
+        throw new Error(`controlTypeMap 설정이 잘못되었습니다: { ${nameMap.child}: ${this.controlTypeMap[nameMap.child]} }`);
+      }
+
       childControls[nameMap.child] = controls[nameMap.parent];
     }
 
     return childControls;
   }
 
-  private valueChangesMap(value: any, from: 'parent' | 'child', to: 'parent' | 'child') {
-    if (!this.nameMaps) {
-      return value;
-    }
+  private initValueChanges() {
+    this.valueChanges = this.formGroup.valueChanges.pipe(
+      distinctUntilChanged(this.valueChangesDistinct.bind(this)),
+      map(this.valueChangesMap.bind(this))
+    ) as EventEmitter<any>;
+    this.valueChanges.emit = (this.formGroup.valueChanges as EventEmitter<any>).emit;
+  }
 
+  private valueChangesDistinct(prev: any, curr: any) {
+    for (const nameMap of this.nameMaps) {
+      if (prev[nameMap.parent] !== curr[nameMap.parent]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private valueChangesMap(value: any) {
     const childValue = {} as any;
 
     for (const nameMap of this.nameMaps) {
-      childValue[nameMap[to]] = value[nameMap[from]];
+      childValue[nameMap.child] = value[nameMap.parent];
     }
 
     return childValue;
   }
 
-  private convertToNameMap(): NameMap[] {
-    if (!this.nameConverter) {
-      return undefined;
-    }
-
-    let nameConverter: FormGroupNameConverter = this.nameConverter;
-
-    if (typeof nameConverter === 'string') {
-      nameConverter = nameConverter.split(';').map(nc => nc.trim());
-    }
-
-    for (let i = 0; i < nameConverter.length; i++) {
-      if (typeof nameConverter[i] === 'string') {
-        const splitNamMap = (nameConverter[i] as string).split(' as ').map(nm => nm.trim());
-
-        if (splitNamMap.length === 1) {
-          nameConverter[i] = { parent: splitNamMap[0], child: splitNamMap[0] };
-        } else if (splitNamMap.length === 2) {
-          nameConverter[i] = { parent: splitNamMap[1], child: splitNamMap[0] };
-        } else {
-          throw new Error('nameMap length 오류');
-        }
-      }
-    }
-
-    return nameConverter as NameMap[];
-  }
-
-  private initValueChanges() {
-    this.valueChanges = this.formGroup.valueChanges.pipe(
-      map(value => this.valueChangesMap(value, 'parent', 'child'))
-    ) as EventEmitter<any>;
-    this.valueChanges.emit = (this.formGroup.valueChanges as EventEmitter<any>).emit;
-  }
-
   private initStatusChanges() {
     this.statusChanges = this.formGroup.statusChanges as EventEmitter<any>;
+  }
+
+  private checkControlType(type: AbstractControlType, control: AbstractControl) {
+    switch (type) {
+      case 'formGroup':
+        return control instanceof FormGroup;
+      case 'formArray':
+        return control instanceof FormArray;
+      case 'formControl':
+        return control instanceof FormControl;
+    }
+    return false;
   }
 }
