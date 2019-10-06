@@ -1,10 +1,10 @@
-import { Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Input, Output, EventEmitter, OnInit, AfterContentInit } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { distinctUntilChanged } from 'rxjs/operators';
 import { SubscriptionBaseComponent, delayMicrotask } from '../core';
 
-export abstract class FormGroupBaseComponent<T = any, F = any> extends SubscriptionBaseComponent implements OnInit {
+export abstract class FormGroupBaseComponent<T = any, F = any> extends SubscriptionBaseComponent implements AfterContentInit {
   @Input()
   get doc(): T { return this._doc; }
   set doc(doc: T) {
@@ -34,7 +34,7 @@ export abstract class FormGroupBaseComponent<T = any, F = any> extends Subscript
     this.formGroup = formGroup;
   }
 
-  ngOnInit(): void {
+  ngAfterContentInit(): void {
     this.setSubscription('value-change', this.initValueChange());
     this.setSubscription('status-change', this.initStatusChange());
     delayMicrotask(() => {

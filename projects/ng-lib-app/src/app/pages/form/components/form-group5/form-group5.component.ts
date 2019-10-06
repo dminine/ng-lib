@@ -1,5 +1,11 @@
 import { Component, forwardRef, AfterContentInit } from '@angular/core';
-import { DnlGroupValueAccessor, DNL_GROUP_VALUE_ACCESSOR, AbstractControlType } from '../../../../../../../ng-lib/src/lib/form';
+import { FormBuilder } from '@angular/forms';
+import {
+  DnlGroupValueAccessor,
+  DNL_GROUP_VALUE_ACCESSOR,
+  AbstractControlType,
+  FormGroupBaseComponent
+} from '../../../../../../../ng-lib/src/lib/form';
 import { DnlFormGroup } from '../../../../../../../ng-lib/src/lib/form/form-group';
 import { HashMap } from '../../../../../../../ng-lib/src/lib/types';
 
@@ -11,21 +17,29 @@ import { HashMap } from '../../../../../../../ng-lib/src/lib/types';
     { provide: DNL_GROUP_VALUE_ACCESSOR, useExisting: forwardRef(() => FormGroup5Component) }
   ]
 })
-export class FormGroup5Component implements AfterContentInit, DnlGroupValueAccessor {
-  formGroup: DnlFormGroup;
+export class FormGroup5Component extends FormGroupBaseComponent implements DnlGroupValueAccessor {
+  formGroup: DnlFormGroup = this.createForm() as DnlFormGroup;
   controlTypeMap: HashMap<AbstractControlType> = {
     a: 'formGroup',
     b: 'formGroup'
   };
 
-  constructor() {
+  constructor(
+    private fb: FormBuilder
+  ) {
+    super();
   }
 
-  ngAfterContentInit(): void {
-    this.formGroup.valueChanges.subscribe(value => {
-      console.log('5', value);
+  private createForm() {
+    return this.fb.group({
+      a: this.fb.group({
+        ab: [null],
+        c: [null]
+      }),
+      b: this.fb.group({
+        d: [null],
+        e: [null]
+      })
     });
   }
-
-
 }

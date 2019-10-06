@@ -35,4 +35,8 @@ export class FormGroup4Component extends FormGroupBaseComponent implements OnIni
       c: [null]
     });
   }
+
+  onValueChange(value: any) {
+    console.log('5', value);
+  }
 }
